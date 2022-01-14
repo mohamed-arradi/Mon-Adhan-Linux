@@ -1,0 +1,75 @@
+{
+  "name": "mon-adhan-desktop",
+  "appId": "fr.app.adhan",
+  "version": "0.0.1",
+  "productName": "Mon Adhan",
+  "icon": "icon.png",
+  "description": "Application determinant les prochaines prières en fonction de votre lieu de localisation",
+  "main": "app.js",
+  "author": "Mohamed Arradi Alaoui",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "start-dev": "electron . --dev --trace-warnings",
+    "deploy_test": "electron-builder --dir",
+    "deploy": "electron-builder --linux snap",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "extraResources": "python_scripts",
+  "linux": {
+    "category": "Lifestyle",
+    "target": [
+      "snap",
+      "deb"
+    ]
+  },
+  "snap": {
+    "confinement": "strict",
+    "plugs": [
+      "desktop",
+      "desktop-legacy",
+      "home",
+      "browser-support",
+      {
+        "personal-files": {
+          "read": [
+            "$HOME/Mon-Adhan"
+          ],
+          "write": [
+            "$HOME/Mon-Adhan"
+          ]
+        }
+      }
+    ]
+  },
+  "keywords": [
+    "adhan",
+    "prière",
+    "mon adhan",
+    "islam",
+    "mosquée",
+    "toulouse",
+    "lyon",
+    "paris",
+    "mosquée de paris",
+    "religion"
+  ],
+  "devDependencies": {
+    "electron": "^16.0.6",
+    "electron-builder": "^22.14.5",
+    "electron-installer-snap": "^5.1.0",
+    "systemjs-plugin-json": "^0.3.0"
+  },
+  "dependencies": {
+    "@syncfusion/ej2-calendars": "^19.4.38",
+    "@syncfusion/ej2-locale": "^19.4.41",
+    "axios": "^0.24.0",
+    "cldr-data": "^36.0.0",
+    "electron-json-storage": "^4.5.0",
+    "js-loading-overlay": "^1.2.0",
+    "node-cron": "^3.0.0",
+    "node-notifier": "^10.0.0",
+    "open": "^8.4.0",
+    "systemjs": "^6.11.0"
+  }
+}

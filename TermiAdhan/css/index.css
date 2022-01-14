@@ -1,0 +1,31 @@
+body {
+    background-image: url("../assets/mosquee_image.jpg");
+    background-size:     cover;                      /* <------ */
+    background-repeat:   no-repeat;
+    background-position: center center; 
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    width: 50%;
+    margin-top: 20%;
+    height: 25%;
+    
+}
+
+#datesListAction {
+    font-weight: 800;
+    font-size: large;
+    height: 60px;
+    color: white;
+    background-color: rgba(128, 128, 128, 0.623);
+    font-family: Arial, Helvetica, sans-serif;
+    border: 2px solid #ffffff;
+}
+
+
+#datesListAction:hover {
+    background-color: #0e3b8f;
+    color: white;
+}

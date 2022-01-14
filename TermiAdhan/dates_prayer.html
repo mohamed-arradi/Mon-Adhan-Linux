@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <link rel="stylesheet" href="./css/date_prayer.css">
+  <link rel="stylesheet" href="./css/calendar.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!--style reference from the Calendar component-->
+  <link href="https://cdn.syncfusion.com/ej2/ej2-base/styles/material.css" rel="stylesheet" />
+  <link href="https://cdn.syncfusion.com/ej2/ej2-buttons/styles/material.css" rel="stylesheet" />
+  <link href="https://cdn.syncfusion.com/ej2/ej2-calendars/styles/material.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+    integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+
+<body>
+
+  <img src="./assets/calendar_icon.png" width="50px" height="50px" style="float:left; padding: 10px;" />
+  <h2 class="header-title" id="header-title"></h2>
+  <div class="container">
+    <div id="offline"></div>
+    <div class="container">
+      <ul class="nav nav-tabs nav-tb">
+        <li class="active">
+          <a class="calendar-tab" href="#gregorian_tab">Gr&eacute;gorien</a>
+        </li>
+        <li>
+          <a class="calendar-tab" href="#hijiri_tab">Hijirien</a>
+        </li>
+      </ul>
+      <div class="row">
+        <div class="col">
+          <div class="tab-content">
+            <div id="gregorian_tab" class="tab-pane fade in active">
+              <div id="calendar_greg"></div>
+            </div>
+            <div id="hijiri_tab" class="tab-pane fade">
+              <div id="calendar_hiji"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <ul id="list-prayer-group" class="list-group list-group-flush">
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</body>
+<!-- Scripts -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+  integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+  integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+  integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/systemjs/0.19.38/system.js" type="text/javascript"></script>
+<script>
+  $(document).ready(function () {
+    $("#offline").load("offline_status_bar.html");
+  });
+</script>
+<script>
+  $(document).ready(function () {
+    $(".nav-tabs a").click(function () {
+      $(this).tab('show');
+    });
+    $('.nav-tabs a').on('shown.bs.tab', function (event) {
+      var x = $(event.target).text();         // active tab
+      var y = $(event.relatedTarget).text();  // previous tab
+      $(".act span").text(x);
+      $(".prev span").text(y);
+    });
+  });
+</script>
+<script src="./js/calendar_prayer_renderer.js"></script>
+<script src="./js/offline_renderer.js"></script>
+
+</html>
