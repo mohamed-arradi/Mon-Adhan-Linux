@@ -1,4 +1,4 @@
-const { app, Menu, BrowserWindow, Tray, nativeImage, ipcMain } = require('electron');
+const { app, Menu, BrowserWindow, Tray, ipcMain } = require('electron');
 var cron = require('node-cron');
 const notifier = require('node-notifier');
 const path = require('path');
@@ -11,16 +11,15 @@ var mainWindow = null
 var contextMenu = null
 var tray = null
 
-const UserCity = "user_city"
-const UserLatitude = "user_location"
-const UserLongitude = "user_longitude"
-const UserTimeZone = "user_timezone"
+const UserCityStorageKey = "user_city"
+const NotApplicableCity = "n/a"
 
-function createWindow() {
+storage.remove(UserCityStorageKey)
+function createMainWindow() {
 
   mainWindow = new BrowserWindow({
-    width: 600,
-    height: 400,
+    width: 400,
+    height: 500,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -41,7 +40,12 @@ function createWindow() {
   if (!process.argv.includes('--hidden')) {
     mainWindow.show();
   }
+
+  if (process.argv.includes('--dev')) {
+    mainWindow.webContents.openDevTools({ mode: 'detach' })
+  }
 }
+
 
 app.setLoginItemSettings({
   openAtLogin: true,
@@ -72,17 +76,14 @@ app.whenReady().then(() => {
 
   tray.setToolTip('Mon Adhan')
   tray.setContextMenu(contextMenu)
-  createWindow()
+  createMainWindow()
 
-
-  const staticLinkHandleRedirect = (e, url) => {
+  mainWindow.webContents.on('will-navigate', (e, url) => {
     if (url !== e.sender.getURL()) {
       e.preventDefault()
       open(url)
     }
-  }
-
-  mainWindow.webContents.on('will-navigate', staticLinkHandleRedirect)
+  })
 
   mainWindow.on('before-quit', function () {
     app.isQuiting = true;
@@ -103,9 +104,9 @@ app.whenReady().then(() => {
 })
 
 ipcMain.on('app:get-city-saved', async (event, args) => {
-  storage.set(UserCity, "Toulouse")
-  storage.get(UserCity, function(error,city) {
-    event.sender.send('callbackCity',isEmpty(city) ? null : city)
+
+  storage.get(UserCityStorageKey, function (error, json) {
+    event.sender.send('callbackCity', isEmpty(json) ? null : json["city"])
   })
 })
 
@@ -115,25 +116,50 @@ ipcMain.on('app:get-latest-available-prayer', (event, args) => {
 
 var cancelDebounceToken
 ipcMain.on('app:get-prayer-for-date', async (event, args) => {
+
   if (typeof cancelDebounceToken != typeof undefined) {
     cancelDebounceToken.cancel("Operation canceled due to new request.")
   }
 
   cancelDebounceToken = axios.CancelToken.source()
-
   const date = args?.[0]
-  const city = storage.getSync(UserCity)
-  const latitude = storage.getSync(UserLatitude)
-  const longitude = storage.getSync(UserLongitude)
-  const timeZone = storage.getSync(UserTimeZone)
+  const city = storage.getSync(UserCityStorageKey)?.["city"]
+  console.log(city)
+  if (isEmpty(city)) {
+    var c = await findCurrentCity()
+    console.log(c)
+    if (c) {
+      if (process.argv.includes('--dev')) {
+        c = "toulouse"
+      }
+      if(c === NotApplicableCity) {
+        event.sender.send("geoblockEvent")
+        return
+      }
+      console.log(c)
+      storage.set(UserCityStorageKey, { city: c }, function (error) {
+        if (!error) {
+          fetchDataForCity(c, date, event)
+        } else {
+          event.sender.send('callbackPrayerForDate', {error: null});
+        }
+      });
+    } else {
+      event.sender.send('callbackPrayerForDate', null);
+    }
+  } else {
+    if (city !== NotApplicableCity) {
+    fetchDataForCity(city, date, event)
+    } else {
+      event.sender.send("geoblockEvent")
+    }
+  }
+})
 
-  if (!isEmpty(latitude) && !isEmpty(longitude) && !isEmpty(timeZone)) {
+async function fetchDataForCity(city, date, event) {
+  try {
+    const cityData = await axios.get("https://api-adresse.data.gouv.fr/search/?limit=1&q=" + city, { cancelToken: cancelDebounceToken.token })
 
-   } else {
-
-    try {
-    const cityData = await axios.get("https://api-adresse.data.gouv.fr/search/?limit=1&q=" + "toulouse", { cancelToken: cancelDebounceToken.token })
-    
     if (cityData.data) {
       cityProperties = cityData.data?.features
       if (cityProperties) {
@@ -146,50 +172,38 @@ ipcMain.on('app:get-prayer-for-date', async (event, args) => {
           event.sender.send('callbackPrayerForDate', results.data.results);
         }
       } else {
-        event.sender.send('callbackPrayerForDate', {error: "Une erreur est survenue, veuillez réessayer"});
+        event.sender.send('callbackPrayerForDate', { error: null});
       }
     } else {
-      event.sender.send('callbackPrayerForDate', {error: "Une erreur est survenue, veuillez réessayer"});
-    }
-  } catch(error) { 
-    event.sender.send('callbackPrayerForDate', null);
-  }
-
-}
-})
-
-async function findCurrentCity() {
-  try {
-  const json = await axios.get("https://ipinfo.io");
-  const city = json["city"]
-  return city
-  } catch(error) {
-    return null
-  } 
-}
-
-async function handleNoCityPrefPrayerCall(date) {
-  try {
-    const json = await axios.get("https://ipinfo.io");
-    const city = json["city"]
-    const ip = json["ip"]
-
-    if (city !== undefined && city !== null) {
-      const endpoint = "http://www.islamicfinder.us/index.php/api/prayer_times?user_ip=" + ip + "&time_format=0&date=" + date + "&method=2&maghrib_rule=1&maghrib_value=5&method=2"
-
-      const prayerDatas = await axios.get(endpoint);
-      return prayerDatas;
-    } else {
-      return null
+      event.sender.send('callbackPrayerForDate', { error: null});
     }
   } catch (error) {
-    console.log("error", error);
-    // appropriately handle the error
+    event.sender.send('callbackPrayerForDate', null);
+  }
+}
+async function findCurrentCity() {
+  try {
+    const json = await axios.get("https://ipinfo.io");
+    const city = json?.data?.["city"]
+    const country = json?.data?.["country"]
+    if(country && country !== "fr") {
+      return NotApplicableCity
+    }
+    return city
+  } catch (error) {
+    return null
   }
 }
 
+
 ipcMain.on('app:get-prayers-calendar', (event, args) => {
-  openCalendar()
+  storage.get(UserCityStorageKey, function (error, city) {
+    if (error) throw error;
+    console.log(city)
+    if (!isEmpty(city)) {
+      openCalendar()
+    }
+  })
 })
 
 function openCalendar() {
@@ -220,7 +234,11 @@ function openCalendar() {
   }
 }
 function isEmpty(obj) {
-  return Object.keys(obj).length === 0;
+  if (obj === null || obj === undefined) {
+    return true
+  } else {
+    return Object.keys(obj).length === 0;
+  }
 }
 // notifier.notify(
 //   {

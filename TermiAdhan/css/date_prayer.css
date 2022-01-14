@@ -3,32 +3,12 @@
     height: 55px;
 }
 
-.prayer-container {
-    display: flex;
-}
 .header-title {
     font-family: Arial, Helvetica, sans-serif;
     font-weight:600;
     color: rgba(128, 128, 128, 0.712);
     margin: 10px;
     padding: 5px;
-}
-
-.prayer-text {
-    font-size: x-large;
-    font-family: Arial, Helvetica, sans-serif;
-    font-weight:600;
-    color: rgb(49, 49, 49);
-    height: auto;
-}
-
-.prayer-time {
-    font-size: x-large;
-    font-weight:lighter;
-    color: gray;
-    text-align: right;
-    font-family: Arial, Helvetica, sans-serif;
-    height: auto;
 }
 
 .calendar-tab {

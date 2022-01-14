@@ -10,7 +10,7 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "start-dev": "electron . --dev --trace-warnings",
+    "start-dev": "electron . --dev",
     "deploy_test": "electron-builder --dir",
     "deploy": "electron-builder --linux snap",
     "postinstall": "electron-builder install-app-deps"

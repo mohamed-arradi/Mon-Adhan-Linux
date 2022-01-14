@@ -16,7 +16,7 @@ L10n.load({
     }
 });
 
-var latestSelectedDate = new Date().toLocaleDateString("fr");
+var latestSelectedDate = getFormattedDate(new Date())
 
 const progressDiv = '<div class="progress" style="margin-top: 50%;"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="20" aria-valuemax="100" style="width: 100%"></div></div>'
 const errorDiv = '<div class="alert alert-danger" role="alert">Une erreur est survenue, veuillez réessayer.</div><button type="button" class="btn btn-info" onclick="refreshData()">Réessayer</button>'
@@ -32,8 +32,9 @@ function refreshData() {
 }
 
 ipcRenderer.on('callbackCity', (event, city) => {
+    console.log(city)
     if (city !== null) {
-        document.getElementById("header-title").textContent = "Localisation: ".concat(city)
+        document.getElementById("header-title").textContent = city.toUpperCase()
     } else {
         document.getElementById("header-title").textContent = "Localisation: Not Set"
     }
@@ -70,10 +71,14 @@ function valueChange(args) {
     document.getElementById('list-prayer-group').innerHTML = progressDiv
     const d = args.value
     latestSelectedDate = d
+    ipcRenderer.send('app:get-prayer-for-date', [getFormattedDate(d)])
+}
+
+function getFormattedDate(d) {
     let ye = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(d);
     let mo = new Intl.DateTimeFormat('en', { month: '2-digit' }).format(d);
     let da = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(d);
-    ipcRenderer.send('app:get-prayer-for-date', [`${da}-${mo}-${ye}`])
+    return `${da}-${mo}-${ye}`
 }
 
 function displayListPrayers(prayersInfos) {

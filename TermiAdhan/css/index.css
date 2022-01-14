@@ -1,31 +1,75 @@
 body {
-    background-image: url("../assets/mosquee_image.jpg");
-    background-size:     cover;                      /* <------ */
+    /* background-image: url("../assets/mosquee_image.jpg"); */
+    background-size:     cover;
     background-repeat:   no-repeat;
     background-position: center center; 
 }
 
-.container {
-    display: flex;
-    justify-content: center;
+.today_date {
+    font-size: large;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight:100;
+    margin: auto;
     width: 50%;
-    margin-top: 20%;
-    height: 25%;
-    
+    color: rgb(3, 90, 161);
+    height: auto;
+    text-align: center;
+}
+
+.list-group-item {
+    padding: 3px 5px;
+    height: 40px;
+}
+
+.list-group {
+    margin: auto;
+    text-align: center;
+    width: 80%;
+}
+.list-group-item {
+    padding: 3px 5px;
+    height: 55px;
+}
+
+.prayer-text-next {
+    font-size: x-large;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight:600;
+    color: rgb(49, 49, 49);
+    height: auto;
+}
+
+.prayer-text-old {
+    font-size: x-large;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight:100;
+    color: rgb(49, 49, 49);
+    height: auto;
+}
+
+.header-title {
+    font-size: x-large;
+    font-weight: 500;
+    color: rgba(128, 128, 128, 0.685);
+    font-family: Arial, Helvetica, sans-serif;
+    margin: auto;
+    text-align: center;
+    width: 50%;
+    padding: 10px;
 }
 
 #datesListAction {
-    font-weight: 800;
-    font-size: large;
-    height: 60px;
+    font-weight: normal;
+    font-size:x-small;
+    float: right;
+    padding: auto;
     color: white;
-    background-color: rgba(128, 128, 128, 0.623);
+    background-color: #0e3b8f;
+    margin-top: 10px;
     font-family: Arial, Helvetica, sans-serif;
-    border: 2px solid #ffffff;
 }
 
-
 #datesListAction:hover {
-    background-color: #0e3b8f;
+    background-color:rgb(49, 49, 49);
     color: white;
 }

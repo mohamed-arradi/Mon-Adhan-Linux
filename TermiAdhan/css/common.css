@@ -1,0 +1,21 @@
+
+.prayer-container {
+    display: flex;
+}
+
+.prayer-text {
+    font-size: x-large;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight:600;
+    color: rgb(49, 49, 49);
+    height: auto;
+}
+
+.prayer-time {
+    font-size: x-large;
+    font-weight:lighter;
+    color: gray;
+    text-align: right;
+    font-family: Arial, Helvetica, sans-serif;
+    height: auto;
+}
