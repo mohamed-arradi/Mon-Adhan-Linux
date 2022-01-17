@@ -17,14 +17,10 @@ L10n.load({
 });
 
 var latestSelectedDate = getFormattedDate(new Date())
-
 const progressDiv = '<div class="progress" style="margin-top: 50%;"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="20" aria-valuemax="100" style="width: 100%"></div></div>'
 const errorDiv = '<div class="alert alert-danger" role="alert">Une erreur est survenue, veuillez réessayer.</div><button type="button" class="btn btn-info" onclick="refreshData()">Réessayer</button>'
 initCalendars()
-document.getElementById('list-prayer-group').innerHTML = progressDiv
-ipcRenderer.send('app:get-prayer-for-date', [latestSelectedDate])
-ipcRenderer.send('app:get-city-saved')
-
+refreshData()
 
 function refreshData() {
     document.getElementById('list-prayer-group').innerHTML = progressDiv
@@ -44,6 +40,11 @@ ipcRenderer.on('callbackPrayerForDate', (event, prayersDictionnary) => {
     displayListPrayers(prayersDictionnary)
 })
 
+ipcRenderer.on('network_update', (event, networkAvailable) => {
+
+    if (networkAvailable) {
+    }
+})
 /////// FUNCTIONS /////////////
 
 function initCalendars() {
@@ -83,7 +84,6 @@ function getFormattedDate(d) {
 
 function displayListPrayers(prayersInfos) {
     if (prayersInfos !== null) {
-
         if (!prayersInfos.hasOwnProperty("error")) {
             var listGroup = document.getElementById('list-prayer-group');
             listGroup.innerHTML = ""

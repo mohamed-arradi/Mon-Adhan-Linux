@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0">
+    <meta name="theme-color" content="#16161d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
     <link rel="stylesheet" href="./css/index.css">
     <link rel="stylesheet" href="./css/common.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <script src='node_modules/advanced-searchbar/dist/advanced-searchbar.js'></script>
 </head>
 
 <body>
@@ -16,8 +22,10 @@
     <img src="./assets/calendar_icon.png" width="40"style="padding: 5px;"/>
 </button>
   <h2 class="header-title" id="header-title"></h2>
-  <div><p class="today_date" id="today_date"></p></div>
+  <div><p class="today_date" id="today_date"></p>
+  </div>
   <div class="col">
+    <advanced-searchbar id="search-bar"></advanced-searchbar>
     <ul id="list-prayer-group" class="list-group list-group-flush">
     </ul>
   </div>

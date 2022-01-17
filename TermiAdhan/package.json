@@ -63,8 +63,10 @@
   "dependencies": {
     "@syncfusion/ej2-calendars": "^19.4.38",
     "@syncfusion/ej2-locale": "^19.4.41",
+    "advanced-searchbar": "^1.0.1",
     "axios": "^0.24.0",
     "cldr-data": "^36.0.0",
+    "electron-alert": "^0.1.20",
     "electron-json-storage": "^4.5.0",
     "js-loading-overlay": "^1.2.0",
     "node-cron": "^3.0.0",

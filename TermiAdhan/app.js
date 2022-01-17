@@ -5,11 +5,26 @@ const path = require('path');
 const url = require('url')
 const open = require("open");
 const storage = require('electron-json-storage');
+const Alert = require("electron-alert");
+
 const { default: axios } = require('axios');
+
+var windowsArr = [];
+
+function broadcast(channel, message) {
+  for (var i = 0; i < windowsArr.length; i++) {
+    if (windowsArr[i] !== null || windowsArr[i] !== undefined) {
+      windowsArr[i].webContents.send(channel, message);
+    }
+  }
+}
 
 var mainWindow = null
 var contextMenu = null
 var tray = null
+var calendarView = null
+var cancelDebounceToken
+var cancelTodayDebounceToken
 
 const UserCityStorageKey = "user_city"
 const NotApplicableCity = "n/a"
@@ -19,16 +34,17 @@ function createMainWindow() {
 
   mainWindow = new BrowserWindow({
     width: 400,
-    height: 500,
+    height: 450,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      spellcheck: false,
+      spellcheck: false
     },
     autoHideMenuBar: true,
     show: false,
     frame: true,
     icon: path.join(__dirname, '/assets/app_icon.png')
+
   });
 
   mainWindow.loadURL(url.format({
@@ -44,6 +60,7 @@ function createMainWindow() {
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   }
+  windowsArr.push(mainWindow)
 }
 
 
@@ -63,13 +80,28 @@ app.whenReady().then(() => {
     },
     {
       label: 'Ouvrir le Calendrier de prière', click: function () {
-        openCalendar()
+        storage.get(UserCityStorageKey, function (error, city) {
+          if (!isEmpty(city)) {
+            openCalendar()
+          } else {
+            let alert = new Alert();
+            let swalOptions = {
+              title: "Informations",
+              text: "Vous ne pouvez pas ouvrir le calendrier de prière sans avoir saisi ou enregistré une ville Francaise",
+              icon: "warning",
+              showCancelButton: false
+            };
+  
+            alert.fireFrameless(swalOptions, null, true, false);
+          }
+        })
       }
     },
     {
       label: 'Quitter', click: function () {
         app.isQuiting = true;
         app.quit();
+        tray.destroy();
       }
     },
   ]);
@@ -101,28 +133,45 @@ app.whenReady().then(() => {
     }
     return false;
   });
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
+  })
 })
 
 ipcMain.on('app:get-city-saved', async (event, args) => {
 
-  storage.get(UserCityStorageKey, function (error, json) {
-    event.sender.send('callbackCity', isEmpty(json) ? null : json["city"])
-  })
+  const city = storage.getSync(UserCityStorageKey)?.["city"]
+  broadcast('callbackCity', isEmpty(json) ? null : json["city"])
 })
 
-ipcMain.on('app:get-latest-available-prayer', (event, args) => {
-
+ipcMain.on('app:get-latest-available-prayer', async (event, args) => {
+  const date = args?.[0]
+  const channel = "callbackPrayerForToday"
+  await getPrayerForDate(date, channel, event, cancelTodayDebounceToken)
 })
 
-var cancelDebounceToken
+ipcMain.on('network_change', (event, args) => {
+  const isNetworkOnline = args
+  broadcast("network_update", isNetworkOnline)
+})
+
 ipcMain.on('app:get-prayer-for-date', async (event, args) => {
+  const date = args?.[0]
+  const channel = "callbackPrayerForDate"
+  await getPrayerForDate(date, channel, event, cancelDebounceToken)
+})
 
-  if (typeof cancelDebounceToken != typeof undefined) {
-    cancelDebounceToken.cancel("Operation canceled due to new request.")
+async function getPrayerForDate(date, channel, event, cancelToken) {
+
+  if (typeof cancelToken != typeof undefined) {
+    console.log(channel)
+    console.log("cancelled")
+    cancelToken.cancel("Operation canceled due to new request.")
   }
 
-  cancelDebounceToken = axios.CancelToken.source()
-  const date = args?.[0]
+  cancelToken = axios.CancelToken.source()
+
   const city = storage.getSync(UserCityStorageKey)?.["city"]
   console.log(city)
   if (isEmpty(city)) {
@@ -132,33 +181,32 @@ ipcMain.on('app:get-prayer-for-date', async (event, args) => {
       if (process.argv.includes('--dev')) {
         c = "toulouse"
       }
-      if(c === NotApplicableCity) {
+      if (c === NotApplicableCity) {
         event.sender.send("geoblockEvent")
         return
       }
       console.log(c)
       storage.set(UserCityStorageKey, { city: c }, function (error) {
         if (!error) {
-          fetchDataForCity(c, date, event)
+          fetchDataForCity(c, date, event, channel, cancelToken)
         } else {
-          event.sender.send('callbackPrayerForDate', {error: null});
+          event.sender.send(channel, { error: null });
         }
       });
     } else {
-      event.sender.send('callbackPrayerForDate', null);
+      event.sender.send(channel, null);
     }
   } else {
     if (city !== NotApplicableCity) {
-    fetchDataForCity(city, date, event)
+      fetchDataForCity(city, date, event, channel, cancelToken)
     } else {
       event.sender.send("geoblockEvent")
     }
   }
-})
-
-async function fetchDataForCity(city, date, event) {
+}
+async function fetchDataForCity(city, date, event, channel, cancelToken) {
   try {
-    const cityData = await axios.get("https://api-adresse.data.gouv.fr/search/?limit=1&q=" + city, { cancelToken: cancelDebounceToken.token })
+    const cityData = await axios.get("https://api-adresse.data.gouv.fr/search/?limit=1&q=" + city, { cancelToken: cancelToken.token })
 
     if (cityData.data) {
       cityProperties = cityData.data?.features
@@ -168,17 +216,17 @@ async function fetchDataForCity(city, date, event) {
         const lat = geometry?.["1"]
         if (lat && lng) {
           const endpoint = "http://www.islamicfinder.us/index.php/api/prayer_times?timezone=Europe/Paris&latitude=" + lat + "&longitude=" + lng + "&time_format=0&date=" + date + "&method=2&maghrib_rule=1&maghrib_value=5&method=2"
-          const results = await axios.get(endpoint, { cancelToken: cancelDebounceToken.token })
-          event.sender.send('callbackPrayerForDate', results.data.results);
+          const results = await axios.get(endpoint, { cancelToken: cancelToken.token })
+          event.sender.send(channel, results.data.results);
         }
       } else {
-        event.sender.send('callbackPrayerForDate', { error: null});
+        event.sender.send(channel, { error: null });
       }
     } else {
-      event.sender.send('callbackPrayerForDate', { error: null});
+      event.sender.send(channel, { error: null });
     }
   } catch (error) {
-    event.sender.send('callbackPrayerForDate', null);
+    event.sender.send(channel, null);
   }
 }
 async function findCurrentCity() {
@@ -186,7 +234,7 @@ async function findCurrentCity() {
     const json = await axios.get("https://ipinfo.io");
     const city = json?.data?.["city"]
     const country = json?.data?.["country"]
-    if(country && country !== "fr") {
+    if (country && country !== "fr") {
       return NotApplicableCity
     }
     return city
@@ -199,7 +247,6 @@ async function findCurrentCity() {
 ipcMain.on('app:get-prayers-calendar', (event, args) => {
   storage.get(UserCityStorageKey, function (error, city) {
     if (error) throw error;
-    console.log(city)
     if (!isEmpty(city)) {
       openCalendar()
     }
@@ -208,13 +255,16 @@ ipcMain.on('app:get-prayers-calendar', (event, args) => {
 
 function openCalendar() {
 
-  const win = new BrowserWindow({
+  const city = storage.getSync(UserCityStorageKey)?.["city"]
+  
+  calendarView = new BrowserWindow({
     height: 450,
     width: 550,
     minWidth: 550,
     minHeight: 450,
     maxWidth: 550,
     maxHeight: 450,
+    title: "Calendrier des prières",
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -223,16 +273,44 @@ function openCalendar() {
     frame: true,
   });
 
-  win.loadURL(url.format({
+  calendarView.loadURL(url.format({
     pathname: path.join(__dirname, 'dates_prayer.html'),
     protocol: 'file:',
     slashes: true
   }))
 
   if (process.argv.includes('--dev')) {
-    win.webContents.openDevTools({ mode: 'detach' })
+    // calendarView.webContents.openDevTools({ mode: 'detach' })
   }
+
+  calendarView.on('closed', function (event) {
+    removeItemOnce(windowsArr, calendarView)
+    calendarView = null
+  });
+
+  windowsArr.push(calendarView)
 }
+
+function removeItemOnce(arr, value) {
+  var index = arr.indexOf(value);
+  if (index > -1) {
+    arr.splice(index, 1);
+  }
+  return arr;
+}
+
+function removeItemAll(arr, value) {
+  var i = 0;
+  while (i < arr.length) {
+    if (arr[i] === value) {
+      arr.splice(i, 1);
+    } else {
+      ++i;
+    }
+  }
+  return arr;
+}
+
 function isEmpty(obj) {
   if (obj === null || obj === undefined) {
     return true

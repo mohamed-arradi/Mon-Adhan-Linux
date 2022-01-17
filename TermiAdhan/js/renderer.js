@@ -1,17 +1,26 @@
-const { Islamic, Calendar } = require('@syncfusion/ej2-calendars');
 var ipcRenderer = require('electron').ipcRenderer;
 
 const button = document.getElementById('datesListAction');
-ipcRenderer.send('app:get-city-saved')
 
-const progressDiv = '<div class="progress"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="20" aria-valuemax="100" style="width: 100%"></div></div>'
+const progressDiv = '<div class="text-center" style="margin-top: 10px"><div class="spinner-border" style="width: 3rem; height: 3rem;" role="status"><span class="sr-only">Récupération de données...</span></div></div>'
 const errorDiv = '<div class="alert alert-danger" role="alert">Une erreur est survenue, veuillez réessayer.</div><button type="button" class="btn btn-info" onclick="refreshData()">Réessayer</button>'
-const outsideCountryError = '<div class="alert alert-danger" role="alert">Ce logiciel ne fonctionne que pour des personnes se situant OU ayant mis une ville francaise.</div><button type="button" class="btn btn-info" onclick="editCity()">Éditer votre ville</button>'
-document.getElementById('list-prayer-group').innerHTML = progressDiv
-document.getElementById('datesListAction').hidden = true
-document.getElementById('today_date').textContent = new Date().toLocaleDateString("fr")
-ipcRenderer.send('app:get-prayer-for-date', [getTodayFormattedDate()])
-ipcRenderer.send('app:get-city-saved')
+const outsideCountryError = '<div class="alert alert-danger" role="alert">Ce logiciel ne fonctionne que pour des personnes se situant OU ayant renseigné  une ville francaise.</div><button type="button" class="btn btn-info" onclick="editCity()">Éditer votre ville</button>'
+
+refreshData()
+
+document.addEventListener('askResults', function (to_find) {
+  let sb = document.getElementsByTagName('advanced-searchbar')[0]
+  sb.data = [{ "id": "toto", "text": "this is toto and he is funny", "pill": "toto_pill" }, { "id": "tata", "text": "this is tata and she is funny too toto ", "pill": "tata_pill" }, { "id": "titi", "text": "this is titi and he is yellow toto", "pill": "titi_pill" }];
+})
+
+document.addEventListener('clickedOnResult', function (result) {
+  window.event.stopPropagation()
+  console.log(result.detail)
+})
+
+document.addEventListener('askResults', function (a) {
+  console.log("index side : " + a)
+})
 
 button.addEventListener('click', () => {
   ipcRenderer.send('app:get-prayers-calendar')
@@ -19,16 +28,33 @@ button.addEventListener('click', () => {
 
 
 function refreshData() {
-  document.getElementById('datesListAction').hidden = true
-  document.getElementById('list-prayer-group').innerHTML = progressDiv
-  ipcRenderer.send('app:get-prayer-for-date', [getTodayFormattedDate()])
+  if (navigator.onLine) {
+    document.getElementById("header-title").hidden = false
+    document.getElementById('list-prayer-group').innerHTML = progressDiv
+    document.getElementById('datesListAction').hidden = true
+    document.getElementById('search-bar').hidden = true
+    document.getElementById('today_date').textContent = getDisplayableDate()
+    ipcRenderer.send('app:get-latest-available-prayer', [getTodayFormattedDate()])
+  }
 }
 
-function editCity() {
+ipcRenderer.on('network_update', (event, networkAvailable) => {
+  if (!networkAvailable) {
+    if (document.getElementById('list-prayer-group').innerHTML.includes(progressDiv)) {
+      document.getElementById('list-prayer-group').innerHTML = ""
+      document.getElementById("header-title").hidden = true
+      document.getElementById("datesListAction").hidden = true
+      document.getElementById('search-bar').hidden = true
+    } else {
+      document.getElementById("datesListAction").hidden = true
+      document.getElementById('search-bar').hidden = true
+    }
+  } else {
+    ipcRenderer.send('app:get-latest-available-prayer', [getTodayFormattedDate()])
+  }
+})
 
-}
-
-ipcRenderer.on('callbackPrayerForDate', (event, prayersDictionnary) => {
+ipcRenderer.on('callbackPrayerForToday', (event, prayersDictionnary) => {
   document.getElementById('datesListAction').hidden = false
   displayListPrayers(prayersDictionnary)
   ipcRenderer.send('app:get-city-saved')
@@ -37,12 +63,11 @@ ipcRenderer.on('callbackPrayerForDate', (event, prayersDictionnary) => {
 ipcRenderer.on('geoblockEvent', (event, data) => {
   document.getElementById("header-title").textContent = ""
   document.getElementById('datesListAction').hidden = true
+  document.getElementById('search-bar').hidden = true
   document.getElementById('list-prayer-group').innerHTML = outsideCountryError
-
 })
 
 ipcRenderer.on('callbackCity', (event, city) => {
-  console.log(city)
   if (city !== null) {
     document.getElementById("header-title").textContent = city.toUpperCase();
   } else {
@@ -50,6 +75,13 @@ ipcRenderer.on('callbackCity', (event, city) => {
   }
 })
 
+function getDisplayableDate() {
+  const d = new Date()
+  let ye = new Intl.DateTimeFormat('fr', { year: 'numeric' }).format(d);
+  let mo = new Intl.DateTimeFormat('fr', { month: 'long' }).format(d);
+  let da = new Intl.DateTimeFormat('fr', { day: 'numeric' }).format(d);
+  return `${da} ${mo} ${ye}`
+}
 function getTodayFormattedDate() {
   const d = new Date()
   let ye = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(d);

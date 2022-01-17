@@ -4,6 +4,7 @@ const updateOnlineStatus = () => {
   } else {
     document.getElementById('offline').hidden = false
   }
+  ipcRenderer.send("network_change", navigator.onLine)
 }
 
 window.addEventListener('online', updateOnlineStatus)
