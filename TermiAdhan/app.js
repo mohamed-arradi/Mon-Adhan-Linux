@@ -6,7 +6,6 @@ const url = require('url')
 const open = require("open");
 const storage = require('electron-json-storage');
 const Alert = require("electron-alert");
-
 const { default: axios } = require('axios');
 
 var windowsArr = [];
@@ -172,6 +171,7 @@ ipcMain.on('app:edit-city', (event, args) => {
 
 async function getPrayerForDate(date, channel, event, cancelToken) {
 
+  console.log(channel)
   if (typeof cancelToken != typeof undefined) {
     console.log(channel)
     console.log("cancelled")
@@ -181,7 +181,6 @@ async function getPrayerForDate(date, channel, event, cancelToken) {
   cancelToken = axios.CancelToken.source()
 
   const city = storage.getSync(UserCityStorageKey)?.["city"]
-  console.log(city)
   if (isEmpty(city)) {
     var c = await findCurrentCity()
     console.log(c)
@@ -193,7 +192,6 @@ async function getPrayerForDate(date, channel, event, cancelToken) {
         event.sender.send("geoblockEvent")
         return
       }
-      console.log(c)
       storage.set(UserCityStorageKey, { city: c }, function (error) {
         if (!error) {
           fetchDataForCity(c, date, event, channel, cancelToken)
@@ -214,7 +212,7 @@ async function getPrayerForDate(date, channel, event, cancelToken) {
 }
 async function fetchDataForCity(city, date, event, channel, cancelToken) {
   try {
-    const cityData = await axios.get("https://api-adresse.data.gouv.fr/search/?limit=1&q=" + city, { cancelToken: cancelToken.token })
+    const cityData = await axios.get("https://api-adresse.data.gouv.fr/search/?limit=1&ype=municipality&q=" + city, { cancelToken: cancelToken.token })
 
     if (cityData.data) {
       cityProperties = cityData.data?.features
@@ -291,12 +289,12 @@ function openEditCityView() {
   calendarView?.close()
   
   editCityView = new BrowserWindow({
-    height: 450,
-    width: 500,
-    minWidth: 550,
-    minHeight: 450,
-    maxWidth: 550,
-    maxHeight: 450,
+    height: 400,
+    width: 380,
+    minWidth: 380,
+    minHeight: 400,
+    maxWidth: 380,
+    maxHeight: 400,
     title: "Recherche de Ville",
     webPreferences: {
       nodeIntegration: true,

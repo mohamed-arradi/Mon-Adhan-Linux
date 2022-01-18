@@ -41,8 +41,8 @@ ipcRenderer.on('callbackPrayerForDate', (event, prayersDictionnary) => {
 })
 
 ipcRenderer.on('network_update', (event, networkAvailable) => {
-
     if (networkAvailable) {
+        refreshData()
     }
 })
 /////// FUNCTIONS /////////////
