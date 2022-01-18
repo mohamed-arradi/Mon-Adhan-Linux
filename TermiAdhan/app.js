@@ -23,6 +23,7 @@ var mainWindow = null
 var contextMenu = null
 var tray = null
 var calendarView = null
+var editCityView = null
 var cancelDebounceToken
 var cancelTodayDebounceToken
 
@@ -110,13 +111,6 @@ app.whenReady().then(() => {
   tray.setContextMenu(contextMenu)
   createMainWindow()
 
-  mainWindow.webContents.on('will-navigate', (e, url) => {
-    if (url !== e.sender.getURL()) {
-      e.preventDefault()
-      open(url)
-    }
-  })
-
   mainWindow.on('before-quit', function () {
     app.isQuiting = true;
   });
@@ -142,7 +136,7 @@ app.whenReady().then(() => {
 ipcMain.on('app:get-city-saved', async (event, args) => {
 
   const city = storage.getSync(UserCityStorageKey)?.["city"]
-  broadcast('callbackCity', isEmpty(json) ? null : json["city"])
+  broadcast('callbackCity', isEmpty(city) ? null : city)
 })
 
 ipcMain.on('app:get-latest-available-prayer', async (event, args) => {
@@ -160,6 +154,20 @@ ipcMain.on('app:get-prayer-for-date', async (event, args) => {
   const date = args?.[0]
   const channel = "callbackPrayerForDate"
   await getPrayerForDate(date, channel, event, cancelDebounceToken)
+})
+
+
+ipcMain.on('app:get-prayers-calendar', (event, args) => {
+  storage.get(UserCityStorageKey, function (error, city) {
+    if (error) throw error;
+    if (!isEmpty(city)) {
+      openCalendar()
+    }
+  })
+})
+
+ipcMain.on('app:edit-city', (event, args) => {
+    openEditCityView()
 })
 
 async function getPrayerForDate(date, channel, event, cancelToken) {
@@ -243,20 +251,8 @@ async function findCurrentCity() {
   }
 }
 
-
-ipcMain.on('app:get-prayers-calendar', (event, args) => {
-  storage.get(UserCityStorageKey, function (error, city) {
-    if (error) throw error;
-    if (!isEmpty(city)) {
-      openCalendar()
-    }
-  })
-})
-
 function openCalendar() {
 
-  const city = storage.getSync(UserCityStorageKey)?.["city"]
-  
   calendarView = new BrowserWindow({
     height: 450,
     width: 550,
@@ -280,7 +276,7 @@ function openCalendar() {
   }))
 
   if (process.argv.includes('--dev')) {
-    // calendarView.webContents.openDevTools({ mode: 'detach' })
+    calendarView.webContents.openDevTools({ mode: 'detach' })
   }
 
   calendarView.on('closed', function (event) {
@@ -289,6 +285,36 @@ function openCalendar() {
   });
 
   windowsArr.push(calendarView)
+}
+
+function openEditCityView() {
+  calendarView?.close()
+  
+  editCityView = new BrowserWindow({
+    height: 450,
+    width: 500,
+    minWidth: 550,
+    minHeight: 450,
+    maxWidth: 550,
+    maxHeight: 450,
+    title: "Recherche de Ville",
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    },
+    autoHideMenuBar: true,
+    frame: true,
+  });
+
+  editCityView.loadURL(url.format({
+    pathname: path.join(__dirname, 'city-search.html'),
+    protocol: 'file:',
+    slashes: true
+  }))
+
+  if (process.argv.includes('--dev')) {
+     editCityView.webContents.openDevTools({ mode: 'detach' })
+  }
 }
 
 function removeItemOnce(arr, value) {

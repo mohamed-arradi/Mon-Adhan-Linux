@@ -1,38 +1,22 @@
-var ipcRenderer = require('electron').ipcRenderer;
+const ipcRenderer = require('electron').ipcRenderer;
 
 const button = document.getElementById('datesListAction');
 
 const progressDiv = '<div class="text-center" style="margin-top: 10px"><div class="spinner-border" style="width: 3rem; height: 3rem;" role="status"><span class="sr-only">Récupération de données...</span></div></div>'
 const errorDiv = '<div class="alert alert-danger" role="alert">Une erreur est survenue, veuillez réessayer.</div><button type="button" class="btn btn-info" onclick="refreshData()">Réessayer</button>'
 const outsideCountryError = '<div class="alert alert-danger" role="alert">Ce logiciel ne fonctionne que pour des personnes se situant OU ayant renseigné  une ville francaise.</div><button type="button" class="btn btn-info" onclick="editCity()">Éditer votre ville</button>'
-
+document.getElementById("header-title").textContent = "Pré-localisation en cours..."
 refreshData()
-
-document.addEventListener('askResults', function (to_find) {
-  let sb = document.getElementsByTagName('advanced-searchbar')[0]
-  sb.data = [{ "id": "toto", "text": "this is toto and he is funny", "pill": "toto_pill" }, { "id": "tata", "text": "this is tata and she is funny too toto ", "pill": "tata_pill" }, { "id": "titi", "text": "this is titi and he is yellow toto", "pill": "titi_pill" }];
-})
-
-document.addEventListener('clickedOnResult', function (result) {
-  window.event.stopPropagation()
-  console.log(result.detail)
-})
-
-document.addEventListener('askResults', function (a) {
-  console.log("index side : " + a)
-})
 
 button.addEventListener('click', () => {
   ipcRenderer.send('app:get-prayers-calendar')
 });
-
 
 function refreshData() {
   if (navigator.onLine) {
     document.getElementById("header-title").hidden = false
     document.getElementById('list-prayer-group').innerHTML = progressDiv
     document.getElementById('datesListAction').hidden = true
-    document.getElementById('search-bar').hidden = true
     document.getElementById('today_date').textContent = getDisplayableDate()
     ipcRenderer.send('app:get-latest-available-prayer', [getTodayFormattedDate()])
   }
@@ -44,10 +28,8 @@ ipcRenderer.on('network_update', (event, networkAvailable) => {
       document.getElementById('list-prayer-group').innerHTML = ""
       document.getElementById("header-title").hidden = true
       document.getElementById("datesListAction").hidden = true
-      document.getElementById('search-bar').hidden = true
     } else {
       document.getElementById("datesListAction").hidden = true
-      document.getElementById('search-bar').hidden = true
     }
   } else {
     ipcRenderer.send('app:get-latest-available-prayer', [getTodayFormattedDate()])
@@ -63,13 +45,12 @@ ipcRenderer.on('callbackPrayerForToday', (event, prayersDictionnary) => {
 ipcRenderer.on('geoblockEvent', (event, data) => {
   document.getElementById("header-title").textContent = ""
   document.getElementById('datesListAction').hidden = true
-  document.getElementById('search-bar').hidden = true
   document.getElementById('list-prayer-group').innerHTML = outsideCountryError
 })
 
 ipcRenderer.on('callbackCity', (event, city) => {
   if (city !== null) {
-    document.getElementById("header-title").textContent = city.toUpperCase();
+    document.getElementById("header-title").innerHTML =  city.toUpperCase() + " <a class=\"btn btn-small\" id=\"editcity\" href=\"#\" onClick=\"loadEditCity()\"><i class=\"far fa-edit\"></i> Changer de ville</a>";
   } else {
     document.getElementById("header-title").textContent = "Pré-localisation en cours..."
   }
@@ -118,4 +99,9 @@ function displayListPrayers(prayersInfos) {
   } else {
     document.getElementById('list-prayer-group').innerHTML = progressDiv
   }
+}
+
+function loadEditCity() {
+  console.log("toto")
+  ipcRenderer.send('app:edit-city')
 }
