@@ -19,15 +19,13 @@
   "linux": {
     "category": "Lifestyle",
     "target": [
-      "snap",
-      "deb"
+      "snap"
     ]
   },
   "snap": {
     "confinement": "strict",
     "plugs": [
       "desktop",
-      "desktop-legacy",
       "home",
       "browser-support",
       {

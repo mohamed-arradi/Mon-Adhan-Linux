@@ -19,7 +19,7 @@ function broadcast(channel, message) {
 
 var mainWindow = null
 var contextMenu = null
-var tray = null
+let tray = null
 var calendarView = null
 var editCityView = null
 var cancelDebounceToken
@@ -70,7 +70,6 @@ function createMainWindow() {
 
   windowsArr.push(mainWindow)
 }
-
 
 app.setLoginItemSettings({
   openAtLogin: true,
@@ -130,6 +129,10 @@ app.whenReady().then(() => {
   mainWindow.on('close', function (event) {
     if (!app.isQuiting) {
       event.preventDefault();
+      mainWindow.hide();
+      tray.destroy();
+    } else {
+      tray.destroy()
       mainWindow.hide();
     }
     return false;
