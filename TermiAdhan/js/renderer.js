@@ -4,7 +4,7 @@ const button = document.getElementById('datesListAction');
 const progressDiv = '<div class="text-center" style="margin-top: 10px"><div class="spinner-border" style="width: 3rem; height: 3rem;" role="status"><span class="sr-only">Récupération de données...</span></div></div>'
 const errorDiv = '<div class="alert alert-danger" role="alert">Une erreur est survenue, veuillez réessayer.</div><button type="button" class="btn btn-info" onclick="refreshData()">Réessayer</button>'
 const outsideCountryError = '<div class="alert alert-danger" role="alert">Ce logiciel ne fonctionne que pour des personnes se situant en France ou dans les DOM-TOM. Dans l\'éventualité où vous utilisiez un VPN ou un Proxy, la localisation peut-être erronée. veuillez donc saisir manuellement votre ville</div><button type="button" class="btn btn-info" onclick="loadEditCity()">Saisir votre ville</button>'
-document.getElementById("header-title").textContent = "Pré-localisation en cours..."
+document.getElementById("header-title").textContent = "Chargement en cours..."
 refreshData()
 
 button.addEventListener('click', () => {
@@ -49,7 +49,7 @@ ipcRenderer.on('geoblockEvent', (event, data) => {
 
 ipcRenderer.on('callbackCity', (event, city) => {
   if (city !== null) {
-    document.getElementById("header-title").innerHTML =  city.toUpperCase() + " <a class=\"btn btn-small\" id=\"editcity\" href=\"#\" onClick=\"loadEditCity()\"><i class=\"far fa-edit\"></i> Changer de ville</a>";
+    document.getElementById("header-title").innerHTML = city.toUpperCase() + " <a class=\"btn btn-small\" id=\"editcity\" href=\"#\" onClick=\"loadEditCity()\"><i class=\"far fa-edit\"></i> Changer de ville</a>";
   } else {
     document.getElementById("header-title").textContent = "Pré-localisation en cours..."
   }

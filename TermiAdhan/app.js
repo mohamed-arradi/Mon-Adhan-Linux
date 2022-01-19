@@ -1,9 +1,8 @@
-const { app, Menu, BrowserWindow, Tray, ipcMain } = require('electron');
+const { app, Menu, BrowserWindow, Tray, ipcMain, globalShortcut } = require('electron');
 var cron = require('node-cron');
 const notifier = require('node-notifier');
 const path = require('path');
 const url = require('url')
-const open = require("open");
 const storage = require('electron-json-storage');
 const Alert = require("electron-alert");
 const { default: axios } = require('axios');
@@ -29,7 +28,6 @@ var cancelTodayDebounceToken
 const UserCityStorageKey = "user_city"
 const NotApplicableCity = "n/a"
 
-storage.remove(UserCityStorageKey)
 function createMainWindow() {
 
   mainWindow = new BrowserWindow({
@@ -60,6 +58,16 @@ function createMainWindow() {
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   }
+
+  globalShortcut.register('f5', function () {
+    console.log('f5 is pressed')
+    mainWindow.reload()
+  })
+  globalShortcut.register('CommandOrControl+R', function () {
+    console.log('CommandOrControl+R is pressed')
+    mainWindow.reload()
+  })
+
   windowsArr.push(mainWindow)
 }
 
@@ -128,6 +136,16 @@ app.whenReady().then(() => {
   });
 })
 
+ipcMain.on('app:update-city', async (event, city) => {
+  if (city !== undefined && city !== null) {
+    storage.set(UserCityStorageKey, { city: city })
+    editCityView.close()
+    mainWindow.reload()
+    const c = storage.getSync(UserCityStorageKey)?.["city"]
+    broadcast('callbackCity', isEmpty(c) ? null : c)
+  }
+})
+
 ipcMain.on('app:get-city-saved', async (event, args) => {
   const city = storage.getSync(UserCityStorageKey)?.["city"]
   broadcast('callbackCity', isEmpty(city) ? null : city)
@@ -148,16 +166,6 @@ ipcMain.on('app:get-prayer-for-date', async (event, args) => {
   const date = args?.[0]
   const channel = "callbackPrayerForDate"
   await getPrayerForDate(date, channel, event, cancelDebounceToken)
-})
-
-ipcMain.on('app:get-city-list', async (event, args) => {
-  const searchQuery = args
-  try {
-    const results = await searchCity(searchQuery)
-    event.sender.send('callbackCityList', results)
-  } catch {
-    event.sender.send('callbackCityList', null)
-  }
 })
 
 ipcMain.on('app:get-prayers-calendar', (event, args) => {
@@ -184,7 +192,6 @@ async function getPrayerForDate(date, channel, event, cancelToken) {
   const city = storage.getSync(UserCityStorageKey)?.["city"]
   if (isEmpty(city)) {
     var c = await findCurrentCity()
-    console.log(c)
     if (c) {
       if (process.argv.includes('--dev')) {
         c = "toulouse"
@@ -217,7 +224,7 @@ async function fetchDataForCity(city, date, event, channel, cancelToken) {
 
     if (cityData.data) {
       cityProperties = cityData.data?.features
-      if (cityProperties) { 
+      if (cityProperties) {
         const geometry = cityProperties[0]?.geometry.coordinates
         const lng = geometry?.["0"]
         const lat = geometry?.["1"]
@@ -244,6 +251,7 @@ async function findCurrentCity() {
     if (country && country !== "fr") {
       return NotApplicableCity
     }
+
     return city
   } catch (error) {
     return null
@@ -337,6 +345,10 @@ function openEditCityView() {
 
   if (process.argv.includes('--dev')) {
     editCityView.webContents.openDevTools({ mode: 'detach' })
+  }
+
+  if (calendarView !== null) {
+    calendarView.close()
   }
 }
 
