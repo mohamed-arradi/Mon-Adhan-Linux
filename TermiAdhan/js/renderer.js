@@ -96,7 +96,7 @@ function displayListPrayers(prayersInfos) {
       document.getElementById('list-prayer-group').innerHTML = errorDiv
     }
   } else {
-    document.getElementById('list-prayer-group').innerHTML = progressDiv
+    document.getElementById('list-prayer-group').innerHTML = errorDiv
   }
 }
 

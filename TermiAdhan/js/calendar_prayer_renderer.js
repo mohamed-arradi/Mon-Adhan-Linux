@@ -25,10 +25,10 @@ refreshData()
 function refreshData() {
     document.getElementById('list-prayer-group').innerHTML = progressDiv
     ipcRenderer.send('app:get-prayer-for-date', [latestSelectedDate])
+    ipcRenderer.send('app:get-city-saved')
 }
 
 ipcRenderer.on('callbackCity', (event, city) => {
-    console.log(city)
     if (city !== null) {
         document.getElementById("header-title").textContent = city.toUpperCase()
     } else {
