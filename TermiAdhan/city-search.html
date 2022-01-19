@@ -1,13 +1,11 @@
 <html>
 <html lang="fr">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0">
     <meta name="theme-color" content="#16161d">
     <meta name="apple-mobile-web-app-capable" content="yes">
-
     <link rel="stylesheet" href="./css/index.css">
     <link rel="stylesheet" href="./css/common.css">
     <link rel="stylesheet" href="./css/search_city.css">
@@ -22,7 +20,10 @@
     <div id="offline"></div>
     <h3 class="header-title" id="header-title">Saississez votre code postal <strong>uniquement</strong></h3>
     <div class="container">
-    <advanced-searchbar class="search-city-container"></advanced-searchbar>
+        <input type="text" id="search-input" class="search-city-container" maxlength="6" onkeyup="filterCity()"
+            placeholder="Entrer votre code postal ici (75001, etc)">
+        <ul id="myUL">
+        </ul>
     </div>
 </body>
 
@@ -31,14 +32,28 @@
     integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
     crossorigin="anonymous"></script>
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-
 <script>
     $(function () {
         $("#offline").load("offline_status_bar_with_no_action.html");
     });
 </script>
 <script src="./js/search-renderer.js"></script>
-<script src='node_modules/advanced-searchbar/dist/advanced-searchbar.js'></script>
 <script src="./js/offline_renderer.js"></script>
-
+<script>
+    function filterCity() {
+        $("#myUL").empty()
+        searchQuery = document.getElementById('search-input').value;
+        $.getJSON(__dirname + '/resources/citydatas.json', function (cities) {
+            for (let index = 0; index < cities.length; index++) {
+                const element = cities[index];
+                const postalCode = element["code_postal"].toString()
+                const slicedPostCode = searchQuery.slice(0, searchQuery.length - 1)
+                if (postalCode === searchQuery || (searchQuery.length >= 5 && postalCode.startsWith(slicedPostCode) && postalCode.length >= 5)) {
+                    var cityDescription = postalCode.concat(" ").concat(element["nom_commune_complet"])
+                    $("#myUL").append('<li><a href="' + postalCode + '">' + cityDescription + '</a></li>')
+                }
+            }
+        });
+    }
+</script>
 </html>

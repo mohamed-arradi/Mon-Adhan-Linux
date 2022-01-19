@@ -126,10 +126,6 @@ app.whenReady().then(() => {
     }
     return false;
   });
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
-  })
 })
 
 ipcMain.on('app:get-city-saved', async (event, args) => {
@@ -221,7 +217,7 @@ async function fetchDataForCity(city, date, event, channel, cancelToken) {
 
     if (cityData.data) {
       cityProperties = cityData.data?.features
-      if (cityProperties) {
+      if (cityProperties) { 
         const geometry = cityProperties[0]?.geometry.coordinates
         const lng = geometry?.["0"]
         const lat = geometry?.["1"]
