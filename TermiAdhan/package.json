@@ -15,7 +15,7 @@
     "deploy": "electron-builder --linux snap",
     "postinstall": "electron-builder install-app-deps"
   },
-  "extraResources": "python_scripts",
+  "extraResources": "resources",
   "linux": {
     "category": "Lifestyle",
     "target": [

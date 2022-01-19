@@ -91,7 +91,7 @@ app.whenReady().then(() => {
               icon: "warning",
               showCancelButton: false
             };
-  
+
             alert.fireFrameless(swalOptions, null, true, false);
           }
         })
@@ -133,7 +133,6 @@ app.whenReady().then(() => {
 })
 
 ipcMain.on('app:get-city-saved', async (event, args) => {
-
   const city = storage.getSync(UserCityStorageKey)?.["city"]
   broadcast('callbackCity', isEmpty(city) ? null : city)
 })
@@ -155,6 +154,15 @@ ipcMain.on('app:get-prayer-for-date', async (event, args) => {
   await getPrayerForDate(date, channel, event, cancelDebounceToken)
 })
 
+ipcMain.on('app:get-city-list', async (event, args) => {
+  const searchQuery = args
+  try {
+    const results = await searchCity(searchQuery)
+    event.sender.send('callbackCityList', results)
+  } catch {
+    event.sender.send('callbackCityList', null)
+  }
+})
 
 ipcMain.on('app:get-prayers-calendar', (event, args) => {
   storage.get(UserCityStorageKey, function (error, city) {
@@ -166,15 +174,12 @@ ipcMain.on('app:get-prayers-calendar', (event, args) => {
 })
 
 ipcMain.on('app:edit-city', (event, args) => {
-    openEditCityView()
+  openEditCityView()
 })
 
 async function getPrayerForDate(date, channel, event, cancelToken) {
 
-  console.log(channel)
   if (typeof cancelToken != typeof undefined) {
-    console.log(channel)
-    console.log("cancelled")
     cancelToken.cancel("Operation canceled due to new request.")
   }
 
@@ -212,7 +217,7 @@ async function getPrayerForDate(date, channel, event, cancelToken) {
 }
 async function fetchDataForCity(city, date, event, channel, cancelToken) {
   try {
-    const cityData = await axios.get("https://api-adresse.data.gouv.fr/search/?limit=1&ype=municipality&q=" + city, { cancelToken: cancelToken.token })
+    const cityData = await axios.get("https://api-adresse.data.gouv.fr/search/?limit=1&type=municipality&q=" + city, { cancelToken: cancelToken.token })
 
     if (cityData.data) {
       cityProperties = cityData.data?.features
@@ -245,6 +250,30 @@ async function findCurrentCity() {
     }
     return city
   } catch (error) {
+    return null
+  }
+}
+
+var cancelCityDebounceToken
+async function searchCity(cityQuery) {
+
+  try {
+    if (typeof cancelCityDebounceToken != typeof undefined) {
+      cancelCityDebounceToken.cancel("Operation canceled due to new request.")
+    }
+
+    cancelCityDebounceToken = axios.CancelToken.source()
+    const cityDatas = await axios.get("https://api-adresse.data.gouv.fr/search/?&type=municipality&q=" + cityQuery, { cancelToken: cancelCityDebounceToken.token })
+
+    const results = cityDatas?.data?.features
+
+    var properties = []
+    for (let index = 0; index < results.length; index++) {
+      const feature = results[index];
+      properties.push(feature.properties)
+    }
+    return properties
+  } catch {
     return null
   }
 }
@@ -287,7 +316,7 @@ function openCalendar() {
 
 function openEditCityView() {
   calendarView?.close()
-  
+
   editCityView = new BrowserWindow({
     height: 400,
     width: 380,
@@ -311,7 +340,7 @@ function openEditCityView() {
   }))
 
   if (process.argv.includes('--dev')) {
-     editCityView.webContents.openDevTools({ mode: 'detach' })
+    editCityView.webContents.openDevTools({ mode: 'detach' })
   }
 }
 

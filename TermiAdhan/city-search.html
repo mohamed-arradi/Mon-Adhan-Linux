@@ -16,14 +16,13 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
         integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
-    <script src='node_modules/advanced-searchbar/dist/advanced-searchbar.js'></script>
 </head>
 
 <body>
     <div id="offline"></div>
-    <h3 class="header-title" id="header-title">Saississez votre ville (France uniquement)</h3>
+    <h3 class="header-title" id="header-title">Saississez votre code postal <strong>uniquement</strong></h3>
     <div class="container">
-    <advanced-searchbar id="search-bar" class="search-city-container"></advanced-searchbar>
+    <advanced-searchbar class="search-city-container"></advanced-searchbar>
     </div>
 </body>
 
@@ -39,6 +38,7 @@
     });
 </script>
 <script src="./js/search-renderer.js"></script>
+<script src='node_modules/advanced-searchbar/dist/advanced-searchbar.js'></script>
 <script src="./js/offline_renderer.js"></script>
 
 </html>
