@@ -278,7 +278,6 @@ async function searchCity(cityQuery) {
     const cityDatas = await axios.get("https://api-adresse.data.gouv.fr/search/?&type=municipality&q=" + cityQuery, { cancelToken: cancelCityDebounceToken.token })
 
     const results = cityDatas?.data?.features
-
     var properties = []
     for (let index = 0; index < results.length; index++) {
       const feature = results[index];
