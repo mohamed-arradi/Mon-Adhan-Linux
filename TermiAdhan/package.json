@@ -69,6 +69,7 @@
     "node-cron": "^3.0.0",
     "node-notifier": "^10.0.0",
     "open": "^8.4.0",
+    "progress-timer": "^0.1.0",
     "systemjs": "^6.11.0"
   }
 }
