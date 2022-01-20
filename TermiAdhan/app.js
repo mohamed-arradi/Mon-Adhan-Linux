@@ -60,7 +60,6 @@ function createMainWindow() {
   }
 
   globalShortcut.register('f5', function () {
-    console.log('f5 is pressed')
     mainWindow.reload()
   })
   globalShortcut.register('CommandOrControl+R', function () {
@@ -76,7 +75,10 @@ app.setLoginItemSettings({
   args: ['--hidden']
 });
 
+
 app.whenReady().then(() => {
+  
+  tray?.destroy()
   tray = new Tray(__dirname + '/assets/icon_colored.png')
   //    { label: 'Prochaine prière dans 10 min: Asr', type: 'radio', checked: true },
   contextMenu = Menu.buildFromTemplate([
@@ -93,13 +95,19 @@ app.whenReady().then(() => {
           } else {
             let alert = new Alert();
             let swalOptions = {
-              title: "Informations",
-              text: "Vous ne pouvez pas ouvrir le calendrier de prière sans avoir saisi ou enregistré une ville Francaise",
+              title: "Erreur",
+              text: "Vous ne pouvez pas ouvrir le calendrier de prière sans avoir saisi au préalable une ville",
               icon: "warning",
-              showCancelButton: false
+              confirmButtonText: "Ajouter une ville",
+              showCancelButton: true
             };
 
-            alert.fireFrameless(swalOptions, null, true, false);
+            let promise = alert.fireWithFrame(swalOptions, "Ajouter une ville?", null, false);
+            promise.then((result) => {
+              if (result.value) {
+                openEditCityView()
+              } else if (result.dismiss === Alert.DismissReason.cancel) { }
+            })
           }
         })
       }
@@ -112,30 +120,27 @@ app.whenReady().then(() => {
       }
     },
   ]);
-
   tray.setToolTip('Mon Adhan')
   tray.setContextMenu(contextMenu)
   createMainWindow()
 
   mainWindow.on('before-quit', function () {
     app.isQuiting = true;
+    tray.destroy();
   });
 
   mainWindow.on('minimize', function (event) {
     event.preventDefault();
-    mainWindow.hide();
+    mainWindow.minimize();
   });
 
   mainWindow.on('close', function (event) {
     if (!app.isQuiting) {
       event.preventDefault();
-      mainWindow.hide();
-      tray.destroy();
+      mainWindow.minimize();
     } else {
-      tray.destroy()
-      mainWindow.hide();
+      app.quit()
     }
-    return false;
   });
 })
 

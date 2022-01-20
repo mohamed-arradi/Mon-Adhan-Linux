@@ -75,15 +75,35 @@ function displayListPrayers(prayersInfos) {
     if (!prayersInfos.hasOwnProperty("error")) {
       var listGroup = document.getElementById('list-prayer-group');
       listGroup.innerHTML = ""
+      var nextPrayer = false
 
       for (const [key, value] of Object.entries(prayersInfos)) {
         const itemDomElem = document.createElement('li');
         itemDomElem.setAttribute('class', 'list-group-item');
 
+        var minutes = value.split(':')[1] 
+        var hour = value.split(':')[0]
+
+        var cDate = new Date()
+        cDate = convertTZ(cDate, "Europe/Paris")
+
+        var d = new Date()
+        d = convertTZ(d, "Europe/Paris")
+        d.setHours(hour)
+        d.setMinutes(minutes)
+        
+        var prayerTextCssClass = "prayer-text"
+        if (d > cDate && nextPrayer === false) {
+          nextPrayer = true
+          prayerTextCssClass = "prayer-text-highlight"
+        } else {
+          prayerTextCssClass = "prayer-text"
+        }
+
         itemDomElem.innerHTML = `
           <div class="row">
               <div class="col">
-              <p class="prayer-text">${key}</p>
+              <p class="${prayerTextCssClass}">${key}</p>
               </div>
               <div class="col">
               <p class="prayer-time">${value}</p>
@@ -102,4 +122,8 @@ function displayListPrayers(prayersInfos) {
 
 function loadEditCity() {
   ipcRenderer.send('app:edit-city')
+}
+
+function convertTZ(date, tzString) {
+  return new Date((typeof date === "string" ? new Date(date) : date).toLocaleString({timeZone: tzString}));   
 }

@@ -20,3 +20,11 @@
     margin-right: 53%;
     border:transparent;
 }
+
+.prayer-text {
+    font-size: x-large;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight:600;
+    color: rgb(49, 49, 49);
+    height: auto;
+}
