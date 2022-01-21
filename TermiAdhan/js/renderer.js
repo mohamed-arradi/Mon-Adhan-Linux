@@ -1,10 +1,17 @@
 const ipcRenderer = require('electron').ipcRenderer;
+const ProgressTimer = require('progress-timer')
 
 const button = document.getElementById('datesListAction');
 const progressDiv = '<div class="text-center" style="margin-top: 10px"><div class="spinner-border" style="width: 3rem; height: 3rem;" role="status"><span class="sr-only">Récupération de données...</span></div></div>'
 const errorDiv = '<div class="alert alert-danger" role="alert">Une erreur est survenue, veuillez réessayer.</div><button type="button" class="btn btn-info" onclick="refreshData()">Réessayer</button>'
 const outsideCountryError = '<div class="alert alert-danger" role="alert">Ce logiciel ne fonctionne que pour des personnes se situant en France ou dans les DOM-TOM. Dans l\'éventualité où vous utilisiez un VPN ou un Proxy, la localisation peut-être erronée. veuillez donc saisir manuellement votre ville</div><button type="button" class="btn btn-info" onclick="loadEditCity()">Saisir votre ville</button>'
 document.getElementById("header-title").textContent = "Chargement en cours..."
+
+var progressBarContainer = document.getElementById('progress-container')
+var bar = document.getElementById("progress-bar")
+var progressBarMessage = document.getElementById("future_prayer_description")
+progressBarMessage.hidden = true
+progressBarContainer.hidden = true
 refreshData()
 
 button.addEventListener('click', () => {
@@ -19,6 +26,60 @@ function refreshData() {
     document.getElementById('today_date').textContent = getDisplayableDate()
     ipcRenderer.send('app:get-latest-available-prayer', [getTodayFormattedDate()])
   }
+}
+
+function setupTimer(nextPrayerInfos) {
+
+  nextPrayerInfos = {
+    "test": "23:30"
+  }
+  if (nextPrayerInfos !== null) {
+
+    var value = nextPrayerInfos[Object.keys(nextPrayerInfos)[0]]
+    console.log(value)
+    var minutes = value.split(':')[1]
+    var hour = value.split(':')[0]
+    var d = new Date()
+    d = convertTZ(d, "Europe/Paris")
+    d.setHours(hour)
+    d.setMinutes(minutes)
+
+    const elapsedTime = getSecondsRemainingFrom(d)
+    progressBarMessage.innerText = 'Prochaine Prière dans '.concat("3 heures")
+    progressBarContainer.hidden = false
+    progressBarMessage.hidden = false
+
+    var timer = new ProgressTimer({
+      total: elapsedTime,
+      interval: elapsedTime < 3600 ? 30000 : 60000
+    })
+
+
+    function changePercent(numerator, denominator) {
+      var per = (numerator / denominator * 100).toFixed(2) + '%'
+      bar.style.width = per
+    }
+
+    timer.on('change', function (time) {
+      changePercent(time, timer.total)
+    })
+
+    timer.on('completed', function () {
+      logState('completed')
+      progressBarContainer.hidden = true
+      progressBarMessage.hidden = true
+    })
+    timer.start()
+  } else {
+    progressBarContainer.hidden = true
+    progressBarMessage.hidden = true
+  }
+}
+
+function getSecondsRemainingFrom(endDate) {
+  var startDate = new Date()
+  startDate = convertTZ(startDate, "Europe/Paris")
+  return (endDate - startDate) / 1000
 }
 
 ipcRenderer.on('network_update', (event, networkAvailable) => {
@@ -76,12 +137,12 @@ function displayListPrayers(prayersInfos) {
       var listGroup = document.getElementById('list-prayer-group');
       listGroup.innerHTML = ""
       var nextPrayer = false
-
+      var nextPrayerInfos = null
       for (const [key, value] of Object.entries(prayersInfos)) {
         const itemDomElem = document.createElement('li');
         itemDomElem.setAttribute('class', 'list-group-item');
 
-        var minutes = value.split(':')[1] 
+        var minutes = value.split(':')[1]
         var hour = value.split(':')[0]
 
         var cDate = new Date()
@@ -91,11 +152,12 @@ function displayListPrayers(prayersInfos) {
         d = convertTZ(d, "Europe/Paris")
         d.setHours(hour)
         d.setMinutes(minutes)
-        
+
         var prayerTextCssClass = "prayer-text"
         if (d > cDate && nextPrayer === false) {
           nextPrayer = true
           prayerTextCssClass = "prayer-text-highlight"
+          nextPrayerInfos = { key : value }
         } else {
           prayerTextCssClass = "prayer-text"
         }
@@ -112,6 +174,7 @@ function displayListPrayers(prayersInfos) {
 
         listGroup.appendChild(itemDomElem);
       }
+      setupTimer(nextPrayerInfos)
     } else {
       document.getElementById('list-prayer-group').innerHTML = errorDiv
     }
@@ -125,5 +188,5 @@ function loadEditCity() {
 }
 
 function convertTZ(date, tzString) {
-  return new Date((typeof date === "string" ? new Date(date) : date).toLocaleString({timeZone: tzString}));   
+  return new Date((typeof date === "string" ? new Date(date) : date).toLocaleString({ timeZone: tzString }));
 }

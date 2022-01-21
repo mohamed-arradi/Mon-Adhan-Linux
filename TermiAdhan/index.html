@@ -25,6 +25,11 @@
   <button class="btn btn-sm" id="datesListAction">
     <img src="./assets/calendar_icon.png" width="40"style="padding: 5px;"/>
 </button>
+
+<button class="btn btn-sm" id="settingsAction">
+  <img src="./assets/settings.svg" width="40"style="padding: 5px;"/>
+</button>
+
   <h2 class="header-title" id="header-title"></h2>
   <div><p class="today_date" id="today_date"></p>
   </div>
@@ -32,8 +37,8 @@
     <ul id="list-prayer-group" class="list-group list-group-flush">
     </ul>
   </div>
-  <div id="future_prayer_description">Prochaine Prière dans 10 minutes</div>
-  <div style="width:100%; height:8px; border:1px solid rgb(85, 85, 85);">
+  <div id="future_prayer_description" style="color: gray;"></div>
+  <div id="progress-container" style="width:100%; height:8px; border:1px solid rgb(85, 85, 85);">
     <div id="progress-bar" style="width:0;background-color: rgb(45, 48, 45);height:8px;"></div>
   </div>
   </div>
@@ -55,29 +60,5 @@
       $(function() {
         $("#offline").load("offline_status_bar.html");
       });
-</script>
-<script>
-var totalTime = 50000
-var timer = new ProgressTimer({
-  total: totalTime,
-  interval: 5000
-})
-
-var bar = document.getElementById('progress-bar')
-
-function changePercent (numerator, denominator) {
-  var per = (numerator / denominator * 100).toFixed(2) + '%'
-  bar.style.width = per
-}
-
-timer.on('change', function(time) {
-    changePercent(time, timer.total)
-})
-
-timer.on('completed', function () {
-  logState('completed')
-})
-
-timer.start()
 </script>
 </html>

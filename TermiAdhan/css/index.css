@@ -67,14 +67,22 @@ body {
 }
 
 #datesListAction {
-    font-weight: normal;
-    font-size:x-small;
     float: right;
     padding: auto;
     color: white;
-    background-color: #0e3b8f;
     margin-top: 10px;
-    font-family: Arial, Helvetica, sans-serif;
+}
+
+#settingsAction {
+    float: left;
+    padding: auto;
+    color: white;
+    margin-top: 10px;
+}
+
+#settingsAction:hover {
+    background-color:rgb(49, 49, 49);
+    color: white;
 }
 
 #datesListAction:hover {

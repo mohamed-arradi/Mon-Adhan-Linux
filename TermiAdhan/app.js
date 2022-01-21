@@ -22,6 +22,7 @@ var contextMenu = null
 let tray = null
 var calendarView = null
 var editCityView = null
+let isQuiting
 var cancelDebounceToken
 var cancelTodayDebounceToken
 
@@ -32,7 +33,7 @@ function createMainWindow() {
 
   mainWindow = new BrowserWindow({
     width: 400,
-    height: 450,
+    height: 500,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -76,15 +77,26 @@ app.setLoginItemSettings({
 });
 
 
-app.whenReady().then(() => {
+
+app.on('window-all-closed', () => {
   
-  tray?.destroy()
+  // any other logic
+  if (process.platform === 'darwin') {
+    app.dock.hide()
+  }
+})
+
+function createTray() {
   tray = new Tray(__dirname + '/assets/icon_colored.png')
   //    { label: 'Prochaine prière dans 10 min: Asr', type: 'radio', checked: true },
   contextMenu = Menu.buildFromTemplate([
     {
       label: 'Ouvrir l\'app', click: function () {
+        if (mainWindow) {
         mainWindow.show()
+        } else {
+          createMainWindow()
+        }
       },
     },
     {
@@ -114,19 +126,25 @@ app.whenReady().then(() => {
     },
     {
       label: 'Quitter', click: function () {
-        app.isQuiting = true;
+        isQuiting = true
         app.quit();
-        tray.destroy();
       }
     },
   ]);
   tray.setToolTip('Mon Adhan')
   tray.setContextMenu(contextMenu)
+}
+
+app.whenReady().then(() => {
+
+  if (!tray) {
+    createTray()
+  }
+
   createMainWindow()
 
   mainWindow.on('before-quit', function () {
-    app.isQuiting = true;
-    tray.destroy();
+    isQuiting = true;
   });
 
   mainWindow.on('minimize', function (event) {
@@ -134,14 +152,9 @@ app.whenReady().then(() => {
     mainWindow.minimize();
   });
 
-  mainWindow.on('close', function (event) {
-    if (!app.isQuiting) {
-      event.preventDefault();
-      mainWindow.minimize();
-    } else {
-      app.quit()
-    }
-  });
+  mainWindow.on('closed', function () {
+     mainWindow = null
+  })
 })
 
 ipcMain.on('app:update-city', async (event, city) => {
@@ -285,7 +298,7 @@ async function searchCity(cityQuery) {
     }
     return properties
   } catch {
-    return null
+    return null  
   }
 }
 
