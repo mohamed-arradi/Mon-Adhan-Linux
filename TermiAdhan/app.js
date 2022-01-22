@@ -340,7 +340,8 @@ function openCalendar() {
 
 function openEditCityView() {
   calendarView?.close()
-
+  editCityView?.close()
+  
   editCityView = new BrowserWindow({
     height: 400,
     width: 380,

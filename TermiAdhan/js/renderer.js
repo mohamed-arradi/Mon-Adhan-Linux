@@ -1,5 +1,6 @@
 const ipcRenderer = require('electron').ipcRenderer;
 const ProgressTimer = require('progress-timer')
+var moment = require('moment-timezone');
 
 const button = document.getElementById('datesListAction');
 const progressDiv = '<div class="text-center" style="margin-top: 10px"><div class="spinner-border" style="width: 3rem; height: 3rem;" role="status"><span class="sr-only">Récupération de données...</span></div></div>'
@@ -30,31 +31,33 @@ function refreshData() {
 
 function setupTimer(nextPrayerInfos) {
 
-  nextPrayerInfos = {
-    "test": "23:30"
-  }
+  // nextPrayerInfos = {
+  //   "test": "6:30"
+  // }
   if (nextPrayerInfos !== null) {
 
     var value = nextPrayerInfos[Object.keys(nextPrayerInfos)[0]]
     console.log(value)
     var minutes = value.split(':')[1]
     var hour = value.split(':')[0]
-    var d = new Date()
-    d = convertTZ(d, "Europe/Paris")
-    d.setHours(hour)
-    d.setMinutes(minutes)
 
-    const elapsedTime = getSecondsRemainingFrom(d)
+    console.log(moment().tz("Europe/Paris", false).format("DD-MM-yyyy hh:mm:ss"))
+    var dd = new Date()
+    dd.setHours(hour);
+    dd.setMinutes(minutes);
+
+    const elapsedTime = getSecondsRemainingFrom(dd)
+    console.log(elapsedTime)
     progressBarMessage.innerText = 'Prochaine Prière dans '.concat("3 heures")
     progressBarContainer.hidden = false
     progressBarMessage.hidden = false
 
     var timer = new ProgressTimer({
       total: elapsedTime,
-      interval: elapsedTime < 3600 ? 30000 : 60000
+      interval: elapsedTime < 3600000 ? 300000 : 900000
     })
 
-
+    timer
     function changePercent(numerator, denominator) {
       var per = (numerator / denominator * 100).toFixed(2) + '%'
       bar.style.width = per
@@ -65,7 +68,6 @@ function setupTimer(nextPrayerInfos) {
     })
 
     timer.on('completed', function () {
-      logState('completed')
       progressBarContainer.hidden = true
       progressBarMessage.hidden = true
     })
@@ -77,9 +79,7 @@ function setupTimer(nextPrayerInfos) {
 }
 
 function getSecondsRemainingFrom(endDate) {
-  var startDate = new Date()
-  startDate = convertTZ(startDate, "Europe/Paris")
-  return (endDate - startDate) / 1000
+  return ((endDate - new Date()) / 1000) * 1000
 }
 
 ipcRenderer.on('network_update', (event, networkAvailable) => {
@@ -146,10 +146,7 @@ function displayListPrayers(prayersInfos) {
         var hour = value.split(':')[0]
 
         var cDate = new Date()
-        cDate = convertTZ(cDate, "Europe/Paris")
-
         var d = new Date()
-        d = convertTZ(d, "Europe/Paris")
         d.setHours(hour)
         d.setMinutes(minutes)
 
@@ -185,8 +182,4 @@ function displayListPrayers(prayersInfos) {
 
 function loadEditCity() {
   ipcRenderer.send('app:edit-city')
-}
-
-function convertTZ(date, tzString) {
-  return new Date((typeof date === "string" ? new Date(date) : date).toLocaleString({ timeZone: tzString }));
 }
