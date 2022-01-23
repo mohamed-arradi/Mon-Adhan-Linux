@@ -1,5 +1,4 @@
 const ipcRenderer = require('electron').ipcRenderer;
-const ProgressTimer = require('progress-timer')
 var moment = require('moment-timezone');
 
 const button = document.getElementById('datesListAction');
@@ -8,11 +7,11 @@ const errorDiv = '<div class="alert alert-danger" role="alert">Une erreur est su
 const outsideCountryError = '<div class="alert alert-danger" role="alert">Ce logiciel ne fonctionne que pour des personnes se situant en France ou dans les DOM-TOM. Dans l\'éventualité où vous utilisiez un VPN ou un Proxy, la localisation peut-être erronée. veuillez donc saisir manuellement votre ville</div><button type="button" class="btn btn-info" onclick="loadEditCity()">Saisir votre ville</button>'
 document.getElementById("header-title").textContent = "Chargement en cours..."
 
-var progressBarContainer = document.getElementById('progress-container')
-var bar = document.getElementById("progress-bar")
-var progressBarMessage = document.getElementById("future_prayer_description")
-progressBarMessage.hidden = true
-progressBarContainer.hidden = true
+
+var countDown = document.getElementById("clockdiv")
+var countDownMessage = document.getElementById("countDownMessage")
+countDown.hidden = true
+countDownMessage.hidden = true
 refreshData()
 
 button.addEventListener('click', () => {
@@ -47,34 +46,14 @@ function setupTimer(nextPrayerInfos) {
     dd.setMinutes(minutes);
 
     const elapsedTime = getSecondsRemainingFrom(dd)
+    const deadline = new Date(Date.parse(new Date()) + elapsedTime)
+    initializeClock('clockdiv', deadline);
     console.log(elapsedTime)
-    progressBarMessage.innerText = 'Prochaine Prière dans '.concat("3 heures")
-    progressBarContainer.hidden = false
-    progressBarMessage.hidden = false
-
-    var timer = new ProgressTimer({
-      total: elapsedTime,
-      interval: elapsedTime < 3600000 ? 300000 : 900000
-    })
-
-    timer
-    function changePercent(numerator, denominator) {
-      var per = (numerator / denominator * 100).toFixed(2) + '%'
-      bar.style.width = per
-    }
-
-    timer.on('change', function (time) {
-      changePercent(time, timer.total)
-    })
-
-    timer.on('completed', function () {
-      progressBarContainer.hidden = true
-      progressBarMessage.hidden = true
-    })
-    timer.start()
+    countDown.hidden = false
+    countDownMessage.hidden = false
   } else {
-    progressBarContainer.hidden = true
-    progressBarMessage.hidden = true
+    countDown.hidden = true
+    countDownMessage.hidden = true
   }
 }
 
@@ -115,6 +94,7 @@ ipcRenderer.on('callbackCity', (event, city) => {
     document.getElementById("header-title").textContent = "Pré-localisation en cours..."
   }
 })
+
 
 function getDisplayableDate() {
   const d = new Date()
@@ -182,4 +162,45 @@ function displayListPrayers(prayersInfos) {
 
 function loadEditCity() {
   ipcRenderer.send('app:edit-city')
+}
+
+
+function getTimeRemaining(endtime) {
+  const total = Date.parse(endtime) - Date.parse(new Date());
+  const seconds = Math.floor((total / 1000) % 60);
+  const minutes = Math.floor((total / 1000 / 60) % 60);
+  const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
+  const days = Math.floor(total / (1000 * 60 * 60 * 24));
+  
+  return {
+    total,
+    days,
+    hours,
+    minutes,
+    seconds
+  };
+}
+
+function initializeClock(id, endtime) {
+  const clock = document.getElementById(id);
+  // const daysSpan = clock.querySelector('.days');
+  const hoursSpan = clock.querySelector('.hours');
+  const minutesSpan = clock.querySelector('.minutes');
+  const secondsSpan = clock.querySelector('.seconds');
+
+  function updateClock() {
+    const t = getTimeRemaining(endtime);
+
+    // daysSpan.innerHTML = t.days;
+    hoursSpan.innerHTML = ('0' + t.hours).slice(-2);
+    minutesSpan.innerHTML = ('0' + t.minutes).slice(-2);
+    secondsSpan.innerHTML = ('0' + t.seconds).slice(-2);
+
+    if (t.total <= 0) {
+      clearInterval(timeinterval);
+    }
+  }
+
+  updateClock();
+  const timeinterval = setInterval(updateClock, 1000);
 }
