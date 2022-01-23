@@ -33,7 +33,9 @@ function createMainWindow() {
 
   mainWindow = new BrowserWindow({
     width: 400,
-    height: 500,
+    height: 550,
+    minWidth: 400,
+    minHeight: 550,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -303,14 +305,14 @@ async function searchCity(cityQuery) {
 }
 
 function openCalendar() {
-
+  
   calendarView = new BrowserWindow({
-    height: 450,
+    height: 500,
     width: 550,
     minWidth: 550,
-    minHeight: 450,
+    minHeight: 500,
     maxWidth: 550,
-    maxHeight: 450,
+    maxHeight: 500,
     title: "Calendrier des prières",
     webPreferences: {
       nodeIntegration: true,
