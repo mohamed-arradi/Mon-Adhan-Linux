@@ -24,38 +24,37 @@
   <button class="btn btn-sm" id="datesListAction">
     <img src="./assets/calendar_icon.png" width="40"style="padding: 5px;"/>
 </button>
-
 <button class="btn btn-sm" id="settingsAction">
   <img src="./assets/settings.svg" width="40"style="padding: 5px;"/>
 </button>
-
+<div>
+  <p class="today_date" id="today_date"/>
+</div>
   <h2 class="header-title" id="header-title"></h2>
-  <div><p class="today_date" id="today_date"></p>
+  <div class="container">
+    <div id="countDownMessage">Prochaine Prière dans</div>
+  <div id="clockdiv" class="clockdiv">
+    <div class="row">
+      <div class="col">
+        <span class="hours"></span>
+        <div class="smalltext">Heure(s)</div>
+      </div>
+      <div class="col">
+        <span class="minutes"></span>
+        <div class="smalltext">Minutes</div>
+      </div>
+      <div class="col">
+        <span class="seconds"></span>
+        <div class="smalltext">Secondes</div>
+      </div>
+      </div>
+    </div>
   </div>
   <div class="col">
     <ul id="list-prayer-group" class="list-group list-group-flush">
     </ul>
   </div>
   </div>
-  <div id="countDownMessage">Prochaine Prière</div>
-<div id="clockdiv">
-  <!-- <div>
-    <span class="days"></span>
-    <div class="smalltext">Days</div>
-  </div> -->
-  <div>
-    <span class="hours"></span>
-    <div class="smalltext">Hours</div>
-  </div>
-  <div>
-    <span class="minutes"></span>
-    <div class="smalltext">Minutes</div>
-  </div>
-  <div>
-    <span class="seconds"></span>
-    <div class="smalltext">Seconds</div>
-  </div>
-</div>
 </body>
 <!-- Scripts -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>

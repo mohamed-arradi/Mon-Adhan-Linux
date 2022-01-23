@@ -1,5 +1,6 @@
 const ipcRenderer = require('electron').ipcRenderer;
 var moment = require('moment-timezone');
+moment.tz.setDefault("Europe/Paris");
 
 const button = document.getElementById('datesListAction');
 const progressDiv = '<div class="text-center" style="margin-top: 10px"><div class="spinner-border" style="width: 3rem; height: 3rem;" role="status"><span class="sr-only">Récupération de données...</span></div></div>'
@@ -12,6 +13,7 @@ var countDown = document.getElementById("clockdiv")
 var countDownMessage = document.getElementById("countDownMessage")
 countDown.hidden = true
 countDownMessage.hidden = true
+var timeinterval = null
 refreshData()
 
 button.addEventListener('click', () => {
@@ -20,6 +22,8 @@ button.addEventListener('click', () => {
 
 function refreshData() {
   if (navigator.onLine) {
+    countDown.hidden = true
+    countDownMessage.hidden = true
     document.getElementById("header-title").hidden = false
     document.getElementById('list-prayer-group').innerHTML = progressDiv
     document.getElementById('datesListAction').hidden = true
@@ -30,9 +34,6 @@ function refreshData() {
 
 function setupTimer(nextPrayerInfos) {
 
-  // nextPrayerInfos = {
-  //   "test": "6:30"
-  // }
   if (nextPrayerInfos !== null) {
 
     var value = nextPrayerInfos[Object.keys(nextPrayerInfos)[0]]
@@ -40,25 +41,35 @@ function setupTimer(nextPrayerInfos) {
     var minutes = value.split(':')[1]
     var hour = value.split(':')[0]
 
-    console.log(moment().tz("Europe/Paris", false).format("DD-MM-yyyy hh:mm:ss"))
-    var dd = new Date()
-    dd.setHours(hour);
-    dd.setMinutes(minutes);
+    var m1 = moment().set({ hour: hour, minute: minutes, second: 0, millisecond: 0 }).tz("Europe/Paris").format("YYYY-MM-DDTHH:mm:ss.sssZ")
+    var m2 = moment().tz("Europe/Paris").format("YYYY-MM-DDTHH:mm:ss.sssZ")
 
-    const elapsedTime = getSecondsRemainingFrom(dd)
-    const deadline = new Date(Date.parse(new Date()) + elapsedTime)
-    initializeClock('clockdiv', deadline);
-    console.log(elapsedTime)
-    countDown.hidden = false
-    countDownMessage.hidden = false
+    console.log(m1)
+    console.log(m2)
+    var today = Date.parse(m2)
+    var prayerDate = Date.parse(m1)
+
+    const elapsedTime = getSecondsRemainingFrom(prayerDate, today)
+    const deadline = new Date(Date.parse(moment().tz("Europe/Paris").format("YYYY-MM-DDTHH:mm:ss.sssZ")) + elapsedTime)
+    if (elapsedTime > 0) {
+      console.log(elapsedTime)
+      initializeClock('clockdiv', deadline);
+      console.log(elapsedTime)
+      countDown.hidden = false
+      countDownMessage.hidden = false
+    }
   } else {
     countDown.hidden = true
     countDownMessage.hidden = true
+    if (timeinterval !== undefined && timeinterval !== null) {
+      clearInterval(timeinterval);
+      timeinterval = null
+    }
   }
 }
 
-function getSecondsRemainingFrom(endDate) {
-  return ((endDate - new Date()) / 1000) * 1000
+function getSecondsRemainingFrom(endDate, startDate) {
+  return ((endDate - startDate) / 1000) * 1000
 }
 
 ipcRenderer.on('network_update', (event, networkAvailable) => {
@@ -89,7 +100,7 @@ ipcRenderer.on('geoblockEvent', (event, data) => {
 
 ipcRenderer.on('callbackCity', (event, city) => {
   if (city !== null) {
-    document.getElementById("header-title").innerHTML = city.toUpperCase() + " <a class=\"btn btn-small\" id=\"editcity\" href=\"#\" onClick=\"loadEditCity()\"><i class=\"far fa-edit\"></i> Changer de ville</a>";
+    document.getElementById("header-title").innerHTML = city.toUpperCase() + "<a class=\"btn btn-small\" id=\"editcity\" href=\"#\" onClick=\"loadEditCity()\"><i class=\"far fa-edit\"></i> Changer de ville</a>";
   } else {
     document.getElementById("header-title").textContent = "Pré-localisation en cours..."
   }
@@ -134,7 +145,7 @@ function displayListPrayers(prayersInfos) {
         if (d > cDate && nextPrayer === false) {
           nextPrayer = true
           prayerTextCssClass = "prayer-text-highlight"
-          nextPrayerInfos = { key : value }
+          nextPrayerInfos = { key: value }
         } else {
           prayerTextCssClass = "prayer-text"
         }
@@ -171,7 +182,7 @@ function getTimeRemaining(endtime) {
   const minutes = Math.floor((total / 1000 / 60) % 60);
   const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
   const days = Math.floor(total / (1000 * 60 * 60 * 24));
-  
+
   return {
     total,
     days,
@@ -190,17 +201,20 @@ function initializeClock(id, endtime) {
 
   function updateClock() {
     const t = getTimeRemaining(endtime);
-
     // daysSpan.innerHTML = t.days;
     hoursSpan.innerHTML = ('0' + t.hours).slice(-2);
     minutesSpan.innerHTML = ('0' + t.minutes).slice(-2);
     secondsSpan.innerHTML = ('0' + t.seconds).slice(-2);
 
     if (t.total <= 0) {
-      clearInterval(timeinterval);
+      refreshData()
+      if (timeinterval !== undefined && timeinterval !== null) {
+        clearInterval(timeinterval);
+        timeinterval = null
+      }
     }
   }
 
   updateClock();
-  const timeinterval = setInterval(updateClock, 1000);
+  timeinterval = setInterval(updateClock, 1000);
 }
