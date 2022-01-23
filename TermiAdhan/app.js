@@ -160,8 +160,8 @@ app.whenReady().then(() => {
 ipcMain.on('app:update-city', async (event, city) => {
   if (city !== undefined && city !== null) {
     storage.set(UserCityStorageKey, { city: city })
-    editCityView.close()
-    mainWindow.reload()
+    editCityView?.close()
+    mainWindow?.reload()
     const c = storage.getSync(UserCityStorageKey)?.["city"]
     broadcast('callbackCity', isEmpty(c) ? null : c)
   }
@@ -339,9 +339,7 @@ function openCalendar() {
 }
 
 function openEditCityView() {
-  calendarView?.close()
-  editCityView?.close()
-  
+ 
   editCityView = new BrowserWindow({
     height: 400,
     width: 380,
