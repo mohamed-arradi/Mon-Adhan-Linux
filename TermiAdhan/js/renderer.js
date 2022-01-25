@@ -37,7 +37,6 @@ function setupTimer(nextPrayerInfos) {
   if (nextPrayerInfos !== null) {
 
     var value = nextPrayerInfos[Object.keys(nextPrayerInfos)[0]]
-    console.log(value)
     var minutes = value.split(':')[1]
     var hour = value.split(':')[0]
 
@@ -108,18 +107,10 @@ ipcRenderer.on('callbackCity', (event, city) => {
 
 
 function getDisplayableDate() {
-  const d = new Date()
-  let ye = new Intl.DateTimeFormat('fr', { year: 'numeric' }).format(d);
-  let mo = new Intl.DateTimeFormat('fr', { month: 'long' }).format(d);
-  let da = new Intl.DateTimeFormat('fr', { day: 'numeric' }).format(d);
-  return `${da} ${mo} ${ye}`
+  return moment().lang('fr').tz("Europe/Paris").format("DD MMMM YYYY")
 }
 function getTodayFormattedDate() {
-  const d = new Date()
-  let ye = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(d);
-  let mo = new Intl.DateTimeFormat('en', { month: '2-digit' }).format(d);
-  let da = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(d);
-  return `${da}-${mo}-${ye}`
+  return moment().lang('fr').tz("Europe/Paris").format("DD-MM-YYYY")
 }
 
 function displayListPrayers(prayersInfos) {
@@ -136,13 +127,11 @@ function displayListPrayers(prayersInfos) {
         var minutes = value.split(':')[1]
         var hour = value.split(':')[0]
 
-        var cDate = new Date()
-        var d = new Date()
-        d.setHours(hour)
-        d.setMinutes(minutes)
-
+        var m1 = moment().set({ hour: hour, minute: minutes, second: 0, millisecond: 0 }).tz("Europe/Paris").format("YYYY-MM-DDTHH:mm:ss.sssZ")
+        var m2 = moment().tz("Europe/Paris").format("YYYY-MM-DDTHH:mm:ss.sssZ")
+        
         var prayerTextCssClass = "prayer-text"
-        if (d > cDate && nextPrayer === false) {
+        if (m1 > m2 && nextPrayer === false) {
           nextPrayer = true
           prayerTextCssClass = "prayer-text-highlight"
           nextPrayerInfos = { key: value }
