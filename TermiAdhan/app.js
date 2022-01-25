@@ -63,11 +63,11 @@ function createMainWindow() {
   }
 
   globalShortcut.register('f5', function () {
-    mainWindow.reload()
+    mainWindow?.reload()
   })
   globalShortcut.register('CommandOrControl+R', function () {
     console.log('CommandOrControl+R is pressed')
-    mainWindow.reload()
+    mainWindow?.reload()
   })
 
   windowsArr.push(mainWindow)
