@@ -29,11 +29,7 @@ function refreshData() {
 }
 
 ipcRenderer.on('callbackCity', (event, city) => {
-    if (city !== null) {
-        document.getElementById("header-title").textContent = city.toUpperCase()
-    } else {
-        document.getElementById("header-title").textContent = "Localisation: Non définie"
-    }
+    document.getElementById("header-title").textContent = city !== null ? city.toUpperCase() : "Localisation: Non définie"
 })
 
 ipcRenderer.on('callbackPrayerForDate', (event, prayersDictionnary) => {
