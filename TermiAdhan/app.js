@@ -6,6 +6,8 @@ const url = require('url')
 const storage = require('electron-json-storage');
 const Alert = require("electron-alert");
 const { default: axios } = require('axios');
+var moment = require('moment-timezone');
+moment.tz.setDefault("Europe/Paris");
 
 var windowsArr = [];
 
@@ -22,11 +24,13 @@ var contextMenu = null
 let tray = null
 var calendarView = null
 var editCityView = null
-let isQuiting
+var settingsView = null
+
 var cancelDebounceToken
 var cancelTodayDebounceToken
 
 const UserCityStorageKey = "user_city"
+const LatestPrayerNotificationInfos = "latest_prayer_infos_notification"
 const NotApplicableCity = "n/a"
 
 function createMainWindow() {
@@ -81,7 +85,6 @@ app.setLoginItemSettings({
 
 
 app.on('window-all-closed', () => {
-  
   // any other logic
   if (process.platform === 'darwin') {
     app.dock.hide()
@@ -95,7 +98,7 @@ function createTray() {
     {
       label: 'Ouvrir l\'app', click: function () {
         if (mainWindow) {
-        mainWindow.show()
+          mainWindow.show()
         } else {
           createMainWindow()
         }
@@ -155,9 +158,17 @@ app.whenReady().then(() => {
   });
 
   mainWindow.on('closed', function () {
-     mainWindow = null
+    mainWindow = null
   })
 })
+
+cron.schedule('* * * * *', () => {
+  console.log('running a task every minute');
+  const date = moment().tz("Europe/Paris").format("DD-MM-YYYY")
+  const channel = "callbackPrayerForCron"
+  console.log(date)
+  getPrayerForDate(date, channel, null, cancelTodayDebounceToken)
+});
 
 ipcMain.on('app:update-city', async (event, city) => {
   if (city !== undefined && city !== null) {
@@ -204,6 +215,10 @@ ipcMain.on('app:edit-city', (event, args) => {
   openEditCityView()
 })
 
+ipcMain.on('app:get-settings', (event, args) => {
+  openSettingsView()
+});
+
 async function getPrayerForDate(date, channel, event, cancelToken) {
 
   if (typeof cancelToken != typeof undefined) {
@@ -220,24 +235,24 @@ async function getPrayerForDate(date, channel, event, cancelToken) {
         c = "toulouse"
       }
       if (c === NotApplicableCity) {
-        event.sender.send("geoblockEvent")
+        event?.sender.send("geoblockEvent")
         return
       }
       storage.set(UserCityStorageKey, { city: c }, function (error) {
         if (!error) {
           fetchDataForCity(c, date, event, channel, cancelToken)
         } else {
-          event.sender.send(channel, { error: null });
+          event?.sender.send(channel, { error: null });
         }
       });
     } else {
-      event.sender.send(channel, null);
+      event?.sender.send(channel, null);
     }
   } else {
     if (city !== NotApplicableCity) {
       fetchDataForCity(city, date, event, channel, cancelToken)
     } else {
-      event.sender.send("geoblockEvent")
+      event?.sender.send("geoblockEvent")
     }
   }
 }
@@ -254,16 +269,19 @@ async function fetchDataForCity(city, date, event, channel, cancelToken) {
         if (lat && lng) {
           const endpoint = "http://www.islamicfinder.us/index.php/api/prayer_times?timezone=Europe/Paris&latitude=" + lat + "&longitude=" + lng + "&time_format=0&date=" + date + "&method=2&maghrib_rule=1&maghrib_value=5&method=2"
           const results = await axios.get(endpoint, { cancelToken: cancelToken.token })
-          event.sender.send(channel, results.data.results);
+          if (channel === "callbackPrayerForCron") {
+            processPrayerResultsForNotification(results.data.results)
+          }
+          event?.sender.send(channel, results.data.results);
         }
       } else {
-        event.sender.send(channel, { error: null });
+        event?.sender.send(channel, { error: null });
       }
     } else {
-      event.sender.send(channel, { error: null });
+      event?.sender.send(channel, { error: null });
     }
   } catch (error) {
-    event.sender.send(channel, null);
+    event?.sender.send(channel, null);
   }
 }
 async function findCurrentCity() {
@@ -281,31 +299,83 @@ async function findCurrentCity() {
   }
 }
 
-var cancelCityDebounceToken
-async function searchCity(cityQuery) {
+function processPrayerResultsForNotification(prayersInfos) {
 
-  try {
-    if (typeof cancelCityDebounceToken != typeof undefined) {
-      cancelCityDebounceToken.cancel("Operation canceled due to new request.")
+  for (const [key, value] of Object.entries(prayersInfos)) {
+    var minutes = value.split(':')[1]
+    var hour = value.split(':')[0]
+    var m1 = moment().set({ hour: hour, minute: minutes, second: 0, millisecond: 0 }).tz("Europe/Paris").format("YYYY-MM-DDTHH:mm:ss.sssZ")
+    var m2 = moment().tz("Europe/Paris").format("YYYY-MM-DDTHH:mm:ss.sssZ")
+
+    var today = Date.parse(m2)
+    var prayerDate = Date.parse(m1)
+    const elapsedTime = ((prayerDate - today) / 1000) * 1000
+    var diffMins = Math.floor((elapsedTime / 1000 / 60) << 0)
+
+    if (m1 > m2 && diffMins < 11 && diffMins > 0) {
+      nextPrayerInfos = { "prayerName": key, "prayerTime": value, "minutes": diffMins }
+      sendNotificationsIfNeeded(nextPrayerInfos)
+      break;
     }
-
-    cancelCityDebounceToken = axios.CancelToken.source()
-    const cityDatas = await axios.get("https://api-adresse.data.gouv.fr/search/?&type=municipality&q=" + cityQuery, { cancelToken: cancelCityDebounceToken.token })
-
-    const results = cityDatas?.data?.features
-    var properties = []
-    for (let index = 0; index < results.length; index++) {
-      const feature = results[index];
-      properties.push(feature.properties)
-    }
-    return properties
-  } catch {
-    return null  
   }
 }
 
+function sendNotificationsIfNeeded(nextPrayerInfos) {
+
+  var today = moment().tz("Europe/Paris").format("YYYY-MM-DD")
+  const prayerName = nextPrayerInfos["prayerName"]
+  const minutesRemaining = nextPrayerInfos["minutes"]
+
+  const message = `La prochaine prière est ${prayerName},  elle sera dans ${minutesRemaining} ${(minutesRemaining > 2 ? "minutes" : "minute")}`;
+
+  storage.get(LatestPrayerNotificationInfos, function (error, data) {
+    if (isEmpty(data)) {
+      storage.set(LatestPrayerNotificationInfos, {
+        "prayer_date": today,
+        "prayer_name": prayerName
+      })
+      notify("Mon Adhan", message)
+    } else {
+      const latestPrayerName = data["prayer_name"]
+      const latestPrayerDate = data["prayer_date"]
+
+      if (latestPrayerName !== prayerName 
+        || (latestPrayerName === prayerName && latestPrayerDate !== today)) {
+        storage.set(LatestPrayerNotificationInfos, {
+          "prayer_date": today,
+          "prayer_name": prayerName
+        })
+        notify("Mon Adhan", message)
+      }
+    }
+  })
+}
+
+function notify(title, message) {
+  notifier.notify({
+    title: title,
+    message: message,
+    icon: path.join(__dirname, '/assets/icon_white.png'), // Absolute path (doesn't work on balloons)
+    sound: true, // Only Notification Center or Windows Toasters
+    wait: false // Wait with callback, until user action is taken against notification, does not apply to Windows Toasters as they always wait or notify-send as it does not support the wait option
+  },
+    function (err, response, metadata) {
+      // Response is response from notification
+      // Metadata contains activationType, activationAt, deliveredAt
+    }
+  );
+
+  notifier.on('click', function (notifierObject, options, event) {
+    mainWindow?.show()
+  });
+
+  notifier.on('timeout', function (notifierObject, options) {
+    // Triggers if `wait: true` and notification closes
+  });
+}
+
 function openCalendar() {
-  
+
   calendarView = new BrowserWindow({
     height: 500,
     width: 550,
@@ -341,7 +411,7 @@ function openCalendar() {
 }
 
 function openEditCityView() {
- 
+
   editCityView = new BrowserWindow({
     height: 400,
     width: 380,
@@ -366,6 +436,39 @@ function openEditCityView() {
 
   if (process.argv.includes('--dev')) {
     editCityView.webContents.openDevTools({ mode: 'detach' })
+  }
+
+  if (calendarView !== null) {
+    calendarView.close()
+  }
+}
+
+function openSettingsView() {
+
+  settingsView = new BrowserWindow({
+    height: 400,
+    width: 380,
+    minWidth: 380,
+    minHeight: 400,
+    maxWidth: 380,
+    maxHeight: 400,
+    title: "Paramètres",
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    },
+    autoHideMenuBar: true,
+    frame: true,
+  });
+
+  settingsView.loadURL(url.format({
+    pathname: path.join(__dirname, 'settings.html'),
+    protocol: 'file:',
+    slashes: true
+  }))
+
+  if (process.argv.includes('--dev')) {
+    settingsView.webContents.openDevTools({ mode: 'detach' })
   }
 
   if (calendarView !== null) {
@@ -400,30 +503,3 @@ function isEmpty(obj) {
     return Object.keys(obj).length === 0;
   }
 }
-// notifier.notify(
-//   {
-//     title: 'My awesome title',
-//     message: 'Hello from node, Mr. User!',
-//     icon: path.join(__dirname, 'adhan_white.png'), // Absolute path (doesn't work on balloons)
-//     sound: true, // Only Notification Center or Windows Toasters
-//     wait: false // Wait with callback, until user action is taken against notification, does not apply to Windows Toasters as they always wait or notify-send as it does not support the wait option
-//   },
-//   function (err, response, metadata) {
-//     // Response is response from notification
-//     // Metadata contains activationType, activationAt, deliveredAt
-//   }
-// );
-
-// notifier.on('click', function (notifierObject, options, event) {
-//   // Triggers if `wait: true` and user clicks notification
-// });
-
-// notifier.on('timeout', function (notifierObject, options) {
-//   // Triggers if `wait: true` and notification closes
-// });
-
-
-        // ios.get('/api/updatecart', {
-        //   params: {
-        //     product: this.product
-        //   }

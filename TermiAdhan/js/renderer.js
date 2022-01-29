@@ -2,7 +2,7 @@ const ipcRenderer = require('electron').ipcRenderer;
 var moment = require('moment-timezone');
 moment.tz.setDefault("Europe/Paris");
 
-const button = document.getElementById('datesListAction');
+
 const progressDiv = '<div class="text-center" style="margin-top: 10px"><div class="spinner-border" style="width: 3rem; height: 3rem;" role="status"><span class="sr-only">Récupération de données...</span></div></div>'
 const errorDiv = '<div class="alert alert-danger" role="alert">Une erreur est survenue, veuillez réessayer.</div><button type="button" class="btn btn-info" onclick="refreshData()">Réessayer</button>'
 const outsideCountryError = '<div class="alert alert-danger" role="alert">Ce logiciel ne fonctionne que pour des personnes se situant en France ou dans les DOM-TOM. Dans l\'éventualité où vous utilisiez un VPN ou un Proxy, la localisation peut-être erronée. veuillez donc saisir manuellement votre ville</div><button type="button" class="btn btn-info" onclick="loadEditCity()">Saisir votre ville</button>'
@@ -16,9 +16,15 @@ countDownMessage.hidden = true
 var timeinterval = null
 refreshData()
 
-button.addEventListener('click', () => {
+const calendarButton = document.getElementById('datesListAction');
+calendarButton.addEventListener('click', () => {
   ipcRenderer.send('app:get-prayers-calendar')
 });
+
+const settingsButton = document.getElementById('settingsAction');
+settingsButton.addEventListener('click', () => {
+  openSettings()
+})
 
 function refreshData() {
   if (navigator.onLine) {
@@ -43,12 +49,10 @@ function setupTimer(nextPrayerInfos) {
     var m1 = moment().set({ hour: hour, minute: minutes, second: 0, millisecond: 0 }).tz("Europe/Paris").format("YYYY-MM-DDTHH:mm:ss.sssZ")
     var m2 = moment().tz("Europe/Paris").format("YYYY-MM-DDTHH:mm:ss.sssZ")
 
-    console.log(m1)
-    console.log(m2)
     var today = Date.parse(m2)
     var prayerDate = Date.parse(m1)
 
-    const elapsedTime = getSecondsRemainingFrom(prayerDate, today)
+    const elapsedTime = getMilliSecondsRemainingFrom(prayerDate, today)
     const deadline = new Date(Date.parse(moment().tz("Europe/Paris").format("YYYY-MM-DDTHH:mm:ss.sssZ")) + elapsedTime)
     if (elapsedTime > 0) {
       console.log(elapsedTime)
@@ -67,7 +71,7 @@ function setupTimer(nextPrayerInfos) {
   }
 }
 
-function getSecondsRemainingFrom(endDate, startDate) {
+function getMilliSecondsRemainingFrom(endDate, startDate) {
   return ((endDate - startDate) / 1000) * 1000
 }
 
@@ -164,33 +168,33 @@ function loadEditCity() {
   ipcRenderer.send('app:edit-city')
 }
 
+function openSettings() {
+  ipcRenderer.send('app:get-settings')
+}
 
 function getTimeRemaining(endtime) {
   const total = Date.parse(endtime) - Date.parse(new Date());
   const seconds = Math.floor((total / 1000) % 60);
   const minutes = Math.floor((total / 1000 / 60) % 60);
   const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
-  const days = Math.floor(total / (1000 * 60 * 60 * 24));
 
-  return {
+  const data =  {
     total,
-    days,
     hours,
     minutes,
     seconds
   };
+  return data;
 }
 
 function initializeClock(id, endtime) {
   const clock = document.getElementById(id);
-  // const daysSpan = clock.querySelector('.days');
   const hoursSpan = clock.querySelector('.hours');
   const minutesSpan = clock.querySelector('.minutes');
   const secondsSpan = clock.querySelector('.seconds');
 
   function updateClock() {
     const t = getTimeRemaining(endtime);
-    // daysSpan.innerHTML = t.days;
     hoursSpan.innerHTML = ('0' + t.hours).slice(-2);
     minutesSpan.innerHTML = ('0' + t.minutes).slice(-2);
     secondsSpan.innerHTML = ('0' + t.seconds).slice(-2);
