@@ -26,6 +26,8 @@ var calendarView = null
 var editCityView = null
 var settingsView = null
 
+var nextPrayerData = null 
+
 var cancelDebounceToken
 var cancelTodayDebounceToken
 
@@ -49,7 +51,6 @@ function createMainWindow() {
     show: false,
     frame: true,
     icon: path.join(__dirname, '/assets/app_icon.png')
-
   });
 
   mainWindow.loadURL(url.format({
@@ -82,66 +83,97 @@ app.setLoginItemSettings({
   args: ['--hidden']
 });
 
-
-
 app.on('window-all-closed', () => {
-  // any other logic
   if (process.platform === 'darwin') {
     app.dock.hide()
   }
 })
 
 function createTray() {
-  tray = new Tray(__dirname + '/assets/icon_colored.png')
-  //    { label: 'Prochaine prière dans 10 min: Asr', type: 'radio', checked: true },
-  contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Ouvrir l\'app', click: function () {
+
+  tray = new Tray(__dirname + '/assets/icon_colored.png') 
+  tray.setToolTip('Mon Adhan')
+  updateContextualMenu()
+}
+
+function updateContextualMenu() {
+
+  const defaultMenu = [{
+    label: 'Ouvrir l\'app', click: function () {
+      if (mainWindow) {
+        mainWindow.show()
+      } else {
+        createMainWindow()
+      }
+    },
+  },
+  {
+    label: 'Ouvrir le Calendrier de prière', click: function () {
+      storage.get(UserCityStorageKey, function (error, city) {
+        if (!isEmpty(city)) {
+          openCalendar()
+        } else {
+          let alert = new Alert();
+          let swalOptions = {
+            title: "Erreur",
+            text: "Vous ne pouvez pas ouvrir le calendrier de prière sans avoir saisi au préalable une ville",
+            icon: "warning",
+            confirmButtonText: "Ajouter une ville",
+            showCancelButton: true
+          };
+
+          let promise = alert.fireWithFrame(swalOptions, "Ajouter une ville?", null, false);
+          promise.then((result) => {
+            if (result.value) {
+              openEditCityView()
+            } else if (result.dismiss === Alert.DismissReason.cancel) { }
+          })
+        }
+      })
+    }
+  },
+  {
+    label: 'Quitter', click: function () {
+      isQuiting = true
+      app.quit();
+    }
+  }]
+
+  if(nextPrayerData) {
+    const prayerName = nextPrayerData["prayerName"]
+    const minutesRemaining = nextPrayerData["minutes"]
+    const message = `Prochaine prière ${prayerName}, dans ${minutesRemaining} ${(minutesRemaining > 2 ? "minutes" : "minute")}`;
+    var customMenu = defaultMenu.push({
+      label: message, click: function () {
         if (mainWindow) {
           mainWindow.show()
         } else {
           createMainWindow()
         }
-      },
-    },
-    {
-      label: 'Ouvrir le Calendrier de prière', click: function () {
-        storage.get(UserCityStorageKey, function (error, city) {
-          if (!isEmpty(city)) {
-            openCalendar()
-          } else {
-            let alert = new Alert();
-            let swalOptions = {
-              title: "Erreur",
-              text: "Vous ne pouvez pas ouvrir le calendrier de prière sans avoir saisi au préalable une ville",
-              icon: "warning",
-              confirmButtonText: "Ajouter une ville",
-              showCancelButton: true
-            };
-
-            let promise = alert.fireWithFrame(swalOptions, "Ajouter une ville?", null, false);
-            promise.then((result) => {
-              if (result.value) {
-                openEditCityView()
-              } else if (result.dismiss === Alert.DismissReason.cancel) { }
-            })
-          }
-        })
       }
-    },
-    {
-      label: 'Quitter', click: function () {
-        isQuiting = true
-        app.quit();
-      }
-    },
-  ]);
-  tray.setToolTip('Mon Adhan')
+    })
+    contextMenu = Menu.buildFromTemplate([customMenu]);
+} else {
+  contextMenu = Menu.buildFromTemplate(defaultMenu);
+}
   tray.setContextMenu(contextMenu)
 }
 
-app.whenReady().then(() => {
+const singleInstanceLock = app.requestSingleInstanceLock();
 
+if (!singleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, argv, cwd)  => {
+     if (mainWindow) {
+      mainWindow.show()
+    }
+  });
+}
+
+console.log(`Node ${process.versions.node}, Chrome ${process.versions.chrome}, Electron ${process.versions.electron}`)
+
+app.whenReady().then(() => {
   if (!tray) {
     createTray()
   }
@@ -156,7 +188,7 @@ app.whenReady().then(() => {
     event.preventDefault();
     mainWindow.minimize();
   });
-
+  
   mainWindow.on('closed', function () {
     mainWindow = null
   })
@@ -166,7 +198,7 @@ cron.schedule('* * * * *', () => {
   console.log('running a task every minute');
   const date = moment().tz("Europe/Paris").format("DD-MM-YYYY")
   const channel = "callbackPrayerForCron"
-  console.log(date)
+
   getPrayerForDate(date, channel, null, cancelTodayDebounceToken)
 });
 
@@ -271,6 +303,7 @@ async function fetchDataForCity(city, date, event, channel, cancelToken) {
           const results = await axios.get(endpoint, { cancelToken: cancelToken.token })
           if (channel === "callbackPrayerForCron") {
             processPrayerResultsForNotification(results.data.results)
+            updateContextualMenu()
           }
           event?.sender.send(channel, results.data.results);
         }
@@ -314,8 +347,11 @@ function processPrayerResultsForNotification(prayersInfos) {
 
     if (m1 > m2 && diffMins < 11 && diffMins > 0) {
       nextPrayerInfos = { "prayerName": key, "prayerTime": value, "minutes": diffMins }
+      nextPrayerData = nextPrayerInfos
       sendNotificationsIfNeeded(nextPrayerInfos)
       break;
+    } else if (m1 > m2 && nextPrayerData === null) {
+      nextPrayerData = { "prayerName": key, "prayerTime": value, "minutes": diffMins }
     }
   }
 }

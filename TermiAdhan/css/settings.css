@@ -15,12 +15,12 @@
     font-weight: 500;
     color: rgba(4, 86, 107, 0.685);
     font-family: Arial, Helvetica, sans-serif;
-    text-align: center;
+    text-align: left;
     width: 100%;
 }
 
 .form-label {
-    font-size: medium;
+    font-size:initial;
     font-weight: 300;
     color: rgba(128, 128, 128, 0.685);
     font-family: Arial, Helvetica, sans-serif;
