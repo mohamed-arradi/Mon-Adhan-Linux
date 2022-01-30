@@ -327,7 +327,6 @@ function sendNotificationsIfNeeded(nextPrayerInfos) {
   const minutesRemaining = nextPrayerInfos["minutes"]
 
   const message = `La prochaine prière est ${prayerName},  elle sera dans ${minutesRemaining} ${(minutesRemaining > 2 ? "minutes" : "minute")}`;
-
   storage.get(LatestPrayerNotificationInfos, function (error, data) {
     if (isEmpty(data)) {
       storage.set(LatestPrayerNotificationInfos, {
@@ -352,10 +351,10 @@ function sendNotificationsIfNeeded(nextPrayerInfos) {
 }
 
 function notify(title, message) {
+
   notifier.notify({
     title: title,
     message: message,
-    icon: path.join(__dirname, '/assets/icon_white.png'), // Absolute path (doesn't work on balloons)
     sound: true, // Only Notification Center or Windows Toasters
     wait: false // Wait with callback, until user action is taken against notification, does not apply to Windows Toasters as they always wait or notify-send as it does not support the wait option
   },
@@ -446,12 +445,12 @@ function openEditCityView() {
 function openSettingsView() {
 
   settingsView = new BrowserWindow({
-    height: 400,
+    height: 420,
     width: 380,
     minWidth: 380,
-    minHeight: 400,
+    minHeight: 420,
     maxWidth: 380,
-    maxHeight: 400,
+    maxHeight: 420,
     title: "Paramètres",
     webPreferences: {
       nodeIntegration: true,
@@ -470,6 +469,11 @@ function openSettingsView() {
   if (process.argv.includes('--dev')) {
     settingsView.webContents.openDevTools({ mode: 'detach' })
   }
+
+  settingsView.webContents.on('new-window', function(e, url) {
+    e.preventDefault();
+    require('electron').shell.openExternal(url);
+  });
 
   if (calendarView !== null) {
     calendarView.close()
