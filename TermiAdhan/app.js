@@ -13,8 +13,12 @@ var windowsArr = [];
 
 function broadcast(channel, message) {
   for (var i = 0; i < windowsArr.length; i++) {
-    if (windowsArr[i] !== null || windowsArr[i] !== undefined) {
-      windowsArr[i].webContents.send(channel, message);
+    try {
+      if (windowsArr[i] !== null || windowsArr[i] !== undefined) {
+        windowsArr?.[i]?.webContents.send(channel, message);
+      } 
+    } catch (error) {
+      
     }
   }
 }
@@ -32,6 +36,7 @@ var cancelDebounceToken
 var cancelTodayDebounceToken
 
 const UserCityStorageKey = "user_city"
+const UserPrayerSettingsKey = "user_prayer_settings"
 const LatestPrayerNotificationInfos = "latest_prayer_infos_notification"
 const NotApplicableCity = "n/a"
 
@@ -100,11 +105,10 @@ function updateContextualMenu() {
 
   const defaultMenu = [{
     label: 'Ouvrir l\'app', click: function () {
-      if (mainWindow) {
-        mainWindow.show()
-      } else {
-        createMainWindow()
-      }
+      try {
+        mainWindow.close()
+      } catch (error) {}
+      createMainWindow()
     },
   },
   {
@@ -159,20 +163,6 @@ function updateContextualMenu() {
   tray.setContextMenu(contextMenu)
 }
 
-const singleInstanceLock = app.requestSingleInstanceLock();
-
-if (!singleInstanceLock) {
-  app.quit();
-} else {
-  app.on('second-instance', (event, argv, cwd)  => {
-     if (mainWindow) {
-      mainWindow.show()
-    }
-  });
-}
-
-console.log(`Node ${process.versions.node}, Chrome ${process.versions.chrome}, Electron ${process.versions.electron}`)
-
 app.whenReady().then(() => {
   if (!tray) {
     createTray()
@@ -190,7 +180,12 @@ app.whenReady().then(() => {
   });
   
   mainWindow.on('closed', function () {
-    mainWindow = null
+    if (editCityView !== null) {
+      editCityView?.close()
+    }
+    if (settingsView !== null) {
+      settingsView?.close()
+    }
   })
 })
 
@@ -210,6 +205,14 @@ ipcMain.on('app:update-city', async (event, city) => {
     const c = storage.getSync(UserCityStorageKey)?.["city"]
     broadcast('callbackCity', isEmpty(c) ? null : c)
   }
+})
+
+ipcMain.on('app:get-prayer-settings', async (event, args) => {
+  const settings = storage.get(UserPrayerSettingsKey, function(error, data) {
+    if (!data.isEmpty()) {
+      event?.sender.send("prayer_settings_callback",data);
+    }
+  })
 })
 
 ipcMain.on('app:get-city-saved', async (event, args) => {
