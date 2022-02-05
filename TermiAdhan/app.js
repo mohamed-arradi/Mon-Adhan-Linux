@@ -180,12 +180,6 @@ app.whenReady().then(() => {
   });
   
   mainWindow.on('closed', function () {
-    if (editCityView !== null) {
-      editCityView?.close()
-    }
-    if (settingsView !== null) {
-      settingsView?.close()
-    }
   })
 })
 
@@ -208,11 +202,24 @@ ipcMain.on('app:update-city', async (event, city) => {
 })
 
 ipcMain.on('app:get-prayer-settings', async (event, args) => {
-  const settings = storage.get(UserPrayerSettingsKey, function(error, data) {
-    if (!data.isEmpty()) {
+  storage.get(UserPrayerSettingsKey, function(error, data) {
+    if (error !== null && !isEmpty(data)) {
+      console.log(data)
       event?.sender.send("prayer_settings_callback",data);
+    } else {
+      storage.set(UserPrayerSettingsKey, { "school": "school-sh", "method":"school-uof" }, function(error) {
+        if(error !== null) {
+          event?.sender.send("prayer_settings_callback", { "school": "school-sh", "method":"school-uof" })
+        }
+      })
     }
   })
+})
+
+ipcMain.on('app:set-prayer-settings', (event, args) => {
+  if (args !== undefined && args !== null) {
+    storage.set(UserPrayerSettingsKey, args);
+  }
 })
 
 ipcMain.on('app:get-city-saved', async (event, args) => {
@@ -394,8 +401,7 @@ function notify(title, message) {
   notifier.notify({
     title: title,
     message: message,
-    sound: true, // Only Notification Center or Windows Toasters
-    wait: false // Wait with callback, until user action is taken against notification, does not apply to Windows Toasters as they always wait or notify-send as it does not support the wait option
+    sound: true,
   },
     function (err, response, metadata) {
       // Response is response from notification

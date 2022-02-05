@@ -55,9 +55,7 @@ function setupTimer(nextPrayerInfos) {
     const elapsedTime = getMilliSecondsRemainingFrom(prayerDate, today)
     const deadline = new Date(Date.parse(moment().tz("Europe/Paris").format("YYYY-MM-DDTHH:mm:ss.sssZ")) + elapsedTime)
     if (elapsedTime > 0) {
-      console.log(elapsedTime)
       initializeClock('clockdiv', deadline);
-      console.log(elapsedTime)
       countDown.hidden = false
       countDownMessage.hidden = false
     }
