@@ -1,9 +1,19 @@
 const ipcRenderer = require('electron').ipcRenderer;
 
+var schoolSelector = null
+var methodSelector = null
 
+var currentSchool = null
+var currentMethod = null
+
+function updateSettings() {
+    var updatedSettings = { "school": currentSchool, "method": currentMethod }
+    ipcRenderer.send('app:set-prayer-settings', updatedSettings)
+}
 function setUpSchoolValue(settings) {
 
     const selectedSchool = settings?.["school"]
+    currentSchool = selectedSchool
 
     console.log("school = " + selectedSchool)
 
@@ -22,6 +32,7 @@ function setUpSchoolValue(settings) {
 function setUpCalculationMethod(settings) {
 
     const selectedMethod = settings?.["method"]
+    currentMethod = selectedMethod
 
     console.log("method = " + selectedMethod)
 
@@ -44,8 +55,22 @@ ipcRenderer.send('app:get-prayer-settings')
 //app:set-prayer-settings
 ipcRenderer.on('prayer_settings_callback',  (event, settings) => {
     if (settings !== undefined && settings !== null) {
-        // console.log(settings)
+        console.log(settings)
         setUpSchoolValue(settings)
         setUpCalculationMethod(settings)
+        schoolSelector = document.getElementById("legal_school")
+        methodSelector = document.getElementById("calculation_method")
+
+        schoolSelector.addEventListener('change',function() {
+            currentSchool = schoolSelector.options[schoolSelector.selectedIndex].value;
+            alert('changed: ' + currentSchool);
+            updateSettings()
+
+        });
+        methodSelector.addEventListener('change',function() {
+            currentMethod = methodSelector.options[methodSelector.selectedIndex].value;
+            alert('changed: ' + currentMethod);
+            updateSettings()
+        });
     }
 })

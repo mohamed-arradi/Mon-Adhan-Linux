@@ -202,23 +202,14 @@ ipcMain.on('app:update-city', async (event, city) => {
 })
 
 ipcMain.on('app:get-prayer-settings', async (event, args) => {
-  storage.get(UserPrayerSettingsKey, function(error, data) {
-    if (error !== null && !isEmpty(data)) {
-      console.log(data)
-      event?.sender.send("prayer_settings_callback",data);
-    } else {
-      storage.set(UserPrayerSettingsKey, { "school": "school-sh", "method":"school-uof" }, function(error) {
-        if(error !== null) {
-          event?.sender.send("prayer_settings_callback", { "school": "school-sh", "method":"school-uof" })
-        }
-      })
-    }
-  })
+  refreshUserSettings(event)
 })
 
 ipcMain.on('app:set-prayer-settings', (event, args) => {
   if (args !== undefined && args !== null) {
-    storage.set(UserPrayerSettingsKey, args);
+    storage.set(UserPrayerSettingsKey, args, function(error) {
+        refreshUserSettings(event)
+    })
   }
 })
 
@@ -261,6 +252,20 @@ ipcMain.on('app:get-settings', (event, args) => {
   openSettingsView()
 });
 
+async function refreshUserSettings(event) {
+  storage.get(UserPrayerSettingsKey, function(error, data) {
+    if (error !== null && !isEmpty(data)) {
+      console.log(data)
+      event?.sender.send("prayer_settings_callback",data);
+    } else {
+      storage.set(UserPrayerSettingsKey, { "school": "school-sh", "method": "school-uof" }, function(error) {
+        if(error !== null) {
+          event?.sender.send("prayer_settings_callback", { "school": "school-sh", "method":"school-uof" })
+        }
+      })
+    }
+  })
+}
 async function getPrayerForDate(date, channel, event, cancelToken) {
 
   if (typeof cancelToken != typeof undefined) {
