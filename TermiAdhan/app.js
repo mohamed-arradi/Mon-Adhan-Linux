@@ -255,17 +255,42 @@ ipcMain.on('app:get-settings', (event, args) => {
 async function refreshUserSettings(event) {
   storage.get(UserPrayerSettingsKey, function(error, data) {
     if (error !== null && !isEmpty(data)) {
-      console.log(data)
       event?.sender.send("prayer_settings_callback",data);
+      mainWindow?.reload()
     } else {
       storage.set(UserPrayerSettingsKey, { "school": "school-sh", "method": "school-uof" }, function(error) {
         if(error !== null) {
           event?.sender.send("prayer_settings_callback", { "school": "school-sh", "method":"school-uof" })
+          mainWindow?.reload()
         }
       })
     }
   })
 }
+
+ function getSettingsMetrics() {
+   const settings = storage.getSync(UserPrayerSettingsKey)
+    
+   const method = settings?.["method"]
+   const school = settings?.["school"]
+
+   const methods = {
+   "calculation-mirail": { maghrib_value: 5, method: 2},
+   "school-uof": { maghrib_value: 0, method: 11},
+   "school-lim": {maghrib_value: 0, method: 3}
+  }
+
+  const schools = {
+    "school-sh": {juristic: 0},
+    "school-ha": {juristic: 1}
+  }
+
+  return {
+    "method_data": methods[method],
+    "school_data": schools[school]
+    };
+}
+
 async function getPrayerForDate(date, channel, event, cancelToken) {
 
   if (typeof cancelToken != typeof undefined) {
@@ -314,7 +339,11 @@ async function fetchDataForCity(city, date, event, channel, cancelToken) {
         const lng = geometry?.["0"]
         const lat = geometry?.["1"]
         if (lat && lng) {
-          const endpoint = "http://www.islamicfinder.us/index.php/api/prayer_times?timezone=Europe/Paris&latitude=" + lat + "&longitude=" + lng + "&time_format=0&date=" + date + "&method=2&maghrib_rule=1&maghrib_value=5&method=2"
+          let settingsMetrics = getSettingsMetrics()
+          let methodData = settingsMetrics["method_data"]
+          let schoolData = settingsMetrics["school_data"]
+          const endpoint = "http://www.islamicfinder.us/index.php/api/prayer_times?timezone=Europe/Paris&latitude=" + lat + "&longitude=" + lng + "&time_format=0&date=" + date + "&juristic=" + schoolData["juristic"] + "&maghrib_rule=1&maghrib_value=" + methodData["maghrib_value"] + "&method=" + methodData["method"]
+        
           const results = await axios.get(endpoint, { cancelToken: cancelToken.token })
           if (channel === "callbackPrayerForCron") {
             processPrayerResultsForNotification(results.data.results)
