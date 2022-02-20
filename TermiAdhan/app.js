@@ -163,6 +163,15 @@ function updateContextualMenu() {
   tray.setContextMenu(contextMenu)
 }
 
+// Replace with
+app.requestSingleInstanceLock()
+app.on('second-instance', (event, argv, cwd) => {
+  if (mainWindow) { 
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+})
+
 app.whenReady().then(() => {
   if (!tray) {
     createTray()
