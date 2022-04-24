@@ -44,9 +44,9 @@ function createMainWindow() {
 
   mainWindow = new BrowserWindow({
     width: 400,
-    height: 500,
+    height: 550,
     minWidth: 400,
-    minHeight: 500,
+    minHeight: 550,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -68,6 +68,7 @@ function createMainWindow() {
     mainWindow.show();
   }
 
+  mainWindow.webContents.openDevTools({ mode: 'detach' })
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   }
@@ -93,6 +94,7 @@ app.on('window-all-closed', () => {
     app.dock.hide()
   }
 })
+
 
 function createTray() {
 
@@ -279,25 +281,38 @@ async function refreshUserSettings(event) {
 
  function getSettingsMetrics() {
    const settings = storage.getSync(UserPrayerSettingsKey)
-    
-   const method = settings?.["method"]
-   const school = settings?.["school"]
 
    const methods = {
-   "calculation-mirail": { maghrib_value: 5, method: 2},
-   "school-uof": { maghrib_value: 0, method: 11},
-   "school-lim": {maghrib_value: 0, method: 3}
-  }
+    "calculation-mirail": { maghrib_value: 5, method: 2},
+    "school-uof": { maghrib_value: 0, method: 11},
+    "school-lim": {maghrib_value: 0, method: 3}
+   }
+ 
+   const schools = {
+     "school-sh": {juristic: 0},
+     "school-ha": {juristic: 1}
+   }
 
-  const schools = {
-    "school-sh": {juristic: 0},
-    "school-ha": {juristic: 1}
-  }
+   const method = settings?.["method_data"]
+   const school = settings?.["school_data"]
 
+   if(!isEmpty(settings) && (method !== undefined && school !== undefined)) {
+  
   return {
-    "method_data": methods[method],
-    "school_data": schools[school]
+    "method_data": method,
+    "school_data": school
     };
+  } else {
+    storage.set(UserPrayerSettingsKey, {
+      "method_data": methods["calculation-mirail"],
+      "school_data": schools["school-sh"]
+    })
+
+    return {
+      "method_data": methods["calculation-mirail"],
+      "school_data": schools["school-sh"]
+      };
+  }
 }
 
 async function getPrayerForDate(date, channel, event, cancelToken) {
@@ -309,6 +324,7 @@ async function getPrayerForDate(date, channel, event, cancelToken) {
   cancelToken = axios.CancelToken.source()
 
   const city = storage.getSync(UserCityStorageKey)?.["city"]
+
   if (isEmpty(city)) {
     var c = await findCurrentCity()
     if (c) {
@@ -344,11 +360,14 @@ async function fetchDataForCity(city, date, event, channel, cancelToken) {
     if (cityData.data) {
       cityProperties = cityData.data?.features
       if (cityProperties) {
+
+    
         const geometry = cityProperties[0]?.geometry.coordinates
         const lng = geometry?.["0"]
         const lat = geometry?.["1"]
         if (lat && lng) {
           let settingsMetrics = getSettingsMetrics()
+          console.log(settingsMetrics)
           let methodData = settingsMetrics["method_data"]
           let schoolData = settingsMetrics["school_data"]
           const endpoint = "http://www.islamicfinder.us/index.php/api/prayer_times?timezone=Europe/Paris&latitude=" + lat + "&longitude=" + lng + "&time_format=0&date=" + date + "&juristic=" + schoolData["juristic"] + "&maghrib_rule=1&maghrib_value=" + methodData["maghrib_value"] + "&method=" + methodData["method"]

@@ -33,6 +33,7 @@ function refreshData() {
     document.getElementById("header-title").hidden = false
     document.getElementById('list-prayer-group').innerHTML = progressDiv
     document.getElementById('datesListAction').hidden = true
+    document.getElementById('settingsAction').hidden = true
     document.getElementById('today_date').textContent = getDisplayableDate()
     ipcRenderer.send('app:get-latest-available-prayer', [getTodayFormattedDate()])
   }
@@ -79,8 +80,10 @@ ipcRenderer.on('network_update', (event, networkAvailable) => {
       document.getElementById('list-prayer-group').innerHTML = ""
       document.getElementById("header-title").hidden = true
       document.getElementById("datesListAction").hidden = true
+      document.getElementById('settingsAction').hidden = true
     } else {
       document.getElementById("datesListAction").hidden = true
+      document.getElementById('settingsAction').hidden = true
     }
   } else {
     ipcRenderer.send('app:get-latest-available-prayer', [getTodayFormattedDate()])
@@ -89,6 +92,7 @@ ipcRenderer.on('network_update', (event, networkAvailable) => {
 
 ipcRenderer.on('callbackPrayerForToday', (event, prayersDictionnary) => {
   document.getElementById('datesListAction').hidden = false
+  document.getElementById('settingsAction').hidden = false
   displayListPrayers(prayersDictionnary)
   ipcRenderer.send('app:get-city-saved')
 })
@@ -96,6 +100,7 @@ ipcRenderer.on('callbackPrayerForToday', (event, prayersDictionnary) => {
 ipcRenderer.on('geoblockEvent', (event, data) => {
   document.getElementById("header-title").textContent = ""
   document.getElementById('datesListAction').hidden = true
+  document.getElementById('settingsAction').hidden = true
   document.getElementById('list-prayer-group').innerHTML = outsideCountryError
 })
 
