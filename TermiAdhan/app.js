@@ -169,7 +169,6 @@ cron.schedule('* * * * *', () => {
   console.log('running a task every minute');
   const date = moment().tz("Europe/Paris").format("DD-MM-YYYY")
   const channel = "callbackPrayerForCron"
-
   getPrayerForDate(date, channel, null, cancelTodayDebounceToken)
 });
 
@@ -351,8 +350,6 @@ async function fetchDataForCity(city, date, event, channel, cancelToken) {
     if (cityData.data) {
       cityProperties = cityData.data?.features
       if (cityProperties) {
-
-    
         const geometry = cityProperties[0]?.geometry.coordinates
         const lng = geometry?.["0"]
         const lat = geometry?.["1"]
@@ -450,6 +447,12 @@ function sendNotificationsIfNeeded(nextPrayerInfos) {
 
 function notify(title, message) {
 
+  const settings = storage.getSync(UserNotificationsSettingsKey)
+
+  const notificationEnable = storage.getSync(UserNotificationsSettingsKey)?.["notifications_enabled"]
+  const notificationHasToBeSend = isEmpty(settings) ? true : notificationEnable
+
+  if(notificationHasToBeSend) {
   notifier.notify({
     title: title,
     message: message,
@@ -468,6 +471,7 @@ function notify(title, message) {
   notifier.on('timeout', function (notifierObject, options) {
     // Triggers if `wait: true` and notification closes
   });
+}
 }
 
 function openCalendar() {
@@ -496,6 +500,8 @@ function openCalendar() {
 
   if (process.argv.includes('--dev')) {
     calendarView.webContents.openDevTools({ mode: 'detach' })
+  } else {
+      console.log = function () {};
   }
 
   calendarView.on('closed', function (event) {
