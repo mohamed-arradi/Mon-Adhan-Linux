@@ -1,7 +1,7 @@
 {
   "name": "mon-adhan-desktop",
   "appId": "fr.app.adhan",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "productName": "Mon Adhan",
   "icon": "icon.png",
   "description": "Application determinant les prochaines prières en fonction de votre lieu de localisation",

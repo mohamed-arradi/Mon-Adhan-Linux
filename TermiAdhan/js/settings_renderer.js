@@ -39,7 +39,6 @@ function setUpCalculationMethod(settings) {
 
     const selectedMethod = settings?.["method"]
     currentMethod = selectedMethod
-
     const methods = [
         {value: "calculation-mirail", text: "Mosquée de Toulouse Mirail"},
         {value: "school-uof", text: "Union des Organisations Islamiques de France"},

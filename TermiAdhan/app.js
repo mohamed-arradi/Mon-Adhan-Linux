@@ -7,6 +7,7 @@ const storage = require('electron-json-storage');
 const Alert = require("electron-alert");
 const { default: axios } = require('axios');
 var moment = require('moment-timezone');
+const { settings } = require('cluster');
 moment.tz.setDefault("Europe/Paris");
 
 var windowsArr = [];
@@ -183,13 +184,13 @@ ipcMain.on('app:update-city', async (event, city) => {
 })
 
 ipcMain.on('app:get-prayer-settings', async (event, args) => {
-  refreshUserSettings(event)
+  refreshUserSettings(event, false)
 })
 
 ipcMain.on('app:set-prayer-settings', (event, args) => {
   if (args !== undefined && args !== null) {
     storage.set(UserPrayerSettingsKey, args, function(error) {
-        refreshUserSettings(event)
+        refreshUserSettings(event, true)
     })
   }
 })
@@ -253,16 +254,21 @@ ipcMain.on('app:get-settings', (event, args) => {
   openSettingsView()
 });
 
-async function refreshUserSettings(event) {
+async function refreshUserSettings(event, reload) {
+
   storage.get(UserPrayerSettingsKey, function(error, data) {
     if (error !== null && !isEmpty(data)) {
       event?.sender.send("prayer_settings_callback",data);
+      if(reload) {
       mainWindow?.reload()
+      }
     } else {
       storage.set(UserPrayerSettingsKey, { "school": "school-sh", "method": "school-uof" }, function(error) {
         if(error !== null) {
           event?.sender.send("prayer_settings_callback", { "school": "school-sh", "method":"school-uof"})
+          if(reload) {
           mainWindow?.reload()
+          }
         }
       })
     }
@@ -271,7 +277,6 @@ async function refreshUserSettings(event) {
 
  function getSettingsMetrics() {
    const settings = storage.getSync(UserPrayerSettingsKey)
-
    const methods = {
     "calculation-mirail": { maghrib_value: 5, method: 2},
     "school-uof": { maghrib_value: 0, method: 11},
@@ -283,23 +288,19 @@ async function refreshUserSettings(event) {
      "school-ha": {juristic: 1}
    }
 
-   const method = settings?.["method_data"]
-   const school = settings?.["school_data"]
+   const method = settings?.["method"]
+   const school = settings?.["school"]
 
    if(!isEmpty(settings) && (method !== undefined && school !== undefined)) {
-  
+    console.log(method)
   return {
-    "method_data": method,
-    "school_data": school,
+    "method_data": methods[method],
+    "school_data": schools[school],
     };
   } else {
-    storage.set(UserPrayerSettingsKey, {
-      "method_data": methods["calculation-mirail"],
-      "school_data": schools["school-sh"]
-    })
-
+    console.log("tetetetettet")
     return {
-      "method_data": methods["calculation-mirail"],
+      "method_data": methods["school-uof"],
       "school_data": schools["school-sh"]
       };
   }
@@ -357,8 +358,9 @@ async function fetchDataForCity(city, date, event, channel, cancelToken) {
           let settingsMetrics = getSettingsMetrics()
           let methodData = settingsMetrics["method_data"]
           let schoolData = settingsMetrics["school_data"]
+          console.log(settings)
           const endpoint = "http://www.islamicfinder.us/index.php/api/prayer_times?timezone=Europe/Paris&latitude=" + lat + "&longitude=" + lng + "&time_format=0&date=" + date + "&juristic=" + schoolData["juristic"] + "&maghrib_rule=1&maghrib_value=" + methodData["maghrib_value"] + "&method=" + methodData["method"]
-        
+          console.log(endpoint)
           const results = await axios.get(endpoint, { cancelToken: cancelToken.token })
           if (channel === "callbackPrayerForCron") {
             processPrayerResultsForNotification(results.data.results)
