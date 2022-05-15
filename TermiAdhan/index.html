@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0">
+    <meta name="theme-color" content="#16161d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <link rel="stylesheet" href="./css/index.css">
+    <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <script
+    src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"
+    data-auto-a11y="true"
+  ></script>
+</head>
+
+<body>
+  <div class="container">
+  <div id="offline"></div>
+  <button class="btn btn-sm" id="datesListAction">
+    <img src="./assets/calendar_icon.png" width="40"style="padding: 5px;"/>
+</button>
+<button class="btn btn-sm" id="settingsAction">
+  <img src="./assets/settings.png" width="40"style="padding: 5px;"/>
+</button>
+<div>
+  <p class="today_date" id="today_date"/>
+</div>
+  <h2 class="header-title" id="header-title"></h2>
+  <div class="container">
+    <div id="countDownMessage">Prochaine Prière dans</div>
+  <div id="clockdiv" class="clockdiv">
+    <div class="row">
+      <div class="col">
+        <span class="hours"></span>
+        <div class="smalltext">Heure(s)</div>
+      </div>
+      <div class="col">
+        <span class="minutes"></span>
+        <div class="smalltext">Minutes</div>
+      </div>
+      <div class="col">
+        <span class="seconds"></span>
+        <div class="smalltext">Secondes</div>
+      </div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <ul id="list-prayer-group" class="list-group list-group-flush">
+    </ul>
+  </div>
+  </div>
+</body>
+<!-- Scripts -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+  integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+  integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+  integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/systemjs/0.19.38/system.js" type="text/javascript"></script>
+<script src="./js/renderer.js"></script>
+<script src="./js/offline_renderer.js"></script>  
+<script> 
+      $(function() {
+        $("#offline").load("offline_status_bar.html");
+      });
+</script>
+</html>
