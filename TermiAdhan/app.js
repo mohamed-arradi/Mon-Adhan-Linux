@@ -99,7 +99,7 @@ app.on('window-all-closed', () => {
 
 function updateContextualMenu() {
 
-  tray = new Tray(__dirname + '/assets/icon_colored.png') 
+  tray = new Tray(__dirname + '/assets/icon_tray.png') 
   tray.setToolTip('Mon Adhan')
 
   const defaultMenu = [{
