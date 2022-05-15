@@ -25,7 +25,7 @@ function broadcast(channel, message) {
 
 var mainWindow = null
 var contextMenu = null
-let tray = null
+var tray = null
 var calendarView = null
 var editCityView = null
 var settingsView = null
@@ -37,6 +37,7 @@ var cancelTodayDebounceToken
 
 const UserCityStorageKey = "user_city"
 const UserPrayerSettingsKey = "user_prayer_settings"
+const UserNotificationsSettingsKey = "user_notifications_settings"
 const LatestPrayerNotificationInfos = "latest_prayer_infos_notification"
 const NotApplicableCity = "n/a"
 
@@ -68,7 +69,6 @@ function createMainWindow() {
     mainWindow.show();
   }
 
-  mainWindow.webContents.openDevTools({ mode: 'detach' })
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   }
@@ -96,14 +96,10 @@ app.on('window-all-closed', () => {
 })
 
 
-function createTray() {
+function updateContextualMenu() {
 
   tray = new Tray(__dirname + '/assets/icon_colored.png') 
   tray.setToolTip('Mon Adhan')
-  updateContextualMenu()
-}
-
-function updateContextualMenu() {
 
   const defaultMenu = [{
     label: 'Ouvrir l\'app', click: function () {
@@ -140,7 +136,6 @@ function updateContextualMenu() {
   },
   {
     label: 'Quitter', click: function () {
-      isQuiting = true
       app.quit();
     }
   }]
@@ -161,37 +156,13 @@ function updateContextualMenu() {
     contextMenu = Menu.buildFromTemplate([customMenu]);
 } else {
   contextMenu = Menu.buildFromTemplate(defaultMenu);
-}
+} 
   tray.setContextMenu(contextMenu)
 }
 
-// Replace with
-app.requestSingleInstanceLock()
-app.on('second-instance', (event, argv, cwd) => {
-  if (mainWindow) { 
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
-  }
-})
-
 app.whenReady().then(() => {
-  if (!tray) {
-    createTray()
-  }
-
+  updateContextualMenu()
   createMainWindow()
-
-  mainWindow.on('before-quit', function () {
-    isQuiting = true;
-  });
-
-  mainWindow.on('minimize', function (event) {
-    event.preventDefault();
-    mainWindow.minimize();
-  });
-  
-  mainWindow.on('closed', function () {
-  })
 })
 
 cron.schedule('* * * * *', () => {
@@ -221,6 +192,26 @@ ipcMain.on('app:set-prayer-settings', (event, args) => {
     storage.set(UserPrayerSettingsKey, args, function(error) {
         refreshUserSettings(event)
     })
+  }
+})
+
+ipcMain.on('app:get-notifications-settings', async (event, args) => {
+  storage.get(UserNotificationsSettingsKey, function(error, data) {
+    if (error !== null && !isEmpty(data)) {
+      event?.sender.send("notification_settings_callback",data);
+    } else {
+      storage.set(UserNotificationsSettingsKey, { "notifications_enabled": true }, function(error) {
+        if(error !== null) {
+          event?.sender.send("notification_settings_callback",  { "notifications_enabled": true })
+        }
+      })
+    }
+  })
+})
+
+ipcMain.on('app:set-notifications-prayer-settings', (event, args) => {
+  if (args !== undefined && args !== null) {
+    storage.set(UserNotificationsSettingsKey, args, function(error) {})
   }
 })
 
@@ -271,7 +262,7 @@ async function refreshUserSettings(event) {
     } else {
       storage.set(UserPrayerSettingsKey, { "school": "school-sh", "method": "school-uof" }, function(error) {
         if(error !== null) {
-          event?.sender.send("prayer_settings_callback", { "school": "school-sh", "method":"school-uof" })
+          event?.sender.send("prayer_settings_callback", { "school": "school-sh", "method":"school-uof"})
           mainWindow?.reload()
         }
       })
@@ -300,7 +291,7 @@ async function refreshUserSettings(event) {
   
   return {
     "method_data": method,
-    "school_data": school
+    "school_data": school,
     };
   } else {
     storage.set(UserPrayerSettingsKey, {
@@ -367,7 +358,6 @@ async function fetchDataForCity(city, date, event, channel, cancelToken) {
         const lat = geometry?.["1"]
         if (lat && lng) {
           let settingsMetrics = getSettingsMetrics()
-          console.log(settingsMetrics)
           let methodData = settingsMetrics["method_data"]
           let schoolData = settingsMetrics["school_data"]
           const endpoint = "http://www.islamicfinder.us/index.php/api/prayer_times?timezone=Europe/Paris&latitude=" + lat + "&longitude=" + lng + "&time_format=0&date=" + date + "&juristic=" + schoolData["juristic"] + "&maghrib_rule=1&maghrib_value=" + methodData["maghrib_value"] + "&method=" + methodData["method"]
