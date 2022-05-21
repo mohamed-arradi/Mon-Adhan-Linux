@@ -1,0 +1,125 @@
+body {
+    /* background-image: url("../assets/mosquee_image.jpg"); */
+    background-size:     cover;
+    background-repeat:   no-repeat;
+    background-position: center center; 
+}
+
+.today_date {
+    font-size: large;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight:600;
+    margin: auto;
+    width: 50%;
+    color: rgb(50, 55, 59);
+    height: 20px;
+    text-align: center;
+}
+
+.list-group-item {
+    padding: 3px 5px;
+    height: 30px;
+}
+
+.list-group {
+    margin: auto;
+    text-align: center;
+    width: 80%;
+}
+.list-group-item {
+    padding: 3px 5px;
+    height: 50px;
+}
+
+.prayer-text {
+    font-size: x-large;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 200;
+    color: rgb(49, 49, 49);
+    height: auto;
+}
+
+.prayer-text-highlight {
+    font-size: x-large;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight:600;
+    color: rgb(49, 49, 49);
+    height: auto;
+}
+
+.prayer-text-old {
+    font-size: x-large;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight:100;
+    color: rgb(49, 49, 49);
+    height: auto;
+}
+
+.header-title {
+    font-size: x-large;
+    font-weight: 500;
+    color: rgba(128, 128, 128, 0.685);
+    font-family: Arial, Helvetica, sans-serif;
+    margin: auto;
+    text-align: center;
+    width: 50%;
+    padding: 10px;
+}
+
+#datesListAction {
+    float: right;
+    padding: auto;
+    color: white;
+    margin-top: 10px;
+}
+
+#settingsAction {
+    float: left;
+    padding: auto;
+    color: white;
+    margin-top: 10px;
+}
+
+#settingsAction:hover {
+    background-color:rgb(49, 49, 49);
+    color: white;
+}
+
+#datesListAction:hover {
+    background-color:rgb(49, 49, 49);
+    color: white;
+}
+
+#clockdiv {
+	font-family: Arial, Helvetica, sans-serif;
+	color: #fff;
+	font-weight: 100;
+	text-align: center;
+	font-size: 15px;
+    margin: auto;
+    border-radius: 5px;
+    width: 80%;
+}
+
+#countDownMessage {
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight:bold;
+}
+
+#clockdiv > div {
+	padding: 5px;
+	border-radius: 10px;
+	background: #0e597c;
+}
+
+#clockdiv div > span {
+	border-radius: 3px;
+	background:  #0e597c;
+	display: inline-block;
+}
+
+.smalltext {
+	padding-top: 2px;
+	font-size: 10px;
+}

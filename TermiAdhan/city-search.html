@@ -1,0 +1,74 @@
+<html>
+<html lang="fr">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0">
+    <meta name="theme-color" content="#16161d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="./css/index.css">
+    <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="./css/search_city.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+        integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+</head>
+
+<body>
+    <div id="offline"></div>
+    <h3 class="header-title" id="header-title">Saississez votre code postal <strong>uniquement</strong></h3>
+    <div class="container">
+        <input type="number" id="search-input" class="search-city-container" maxlength="6" onkeyup="filterCity()"
+            placeholder="Entrer votre code postal (75001, etc)">
+        <ul id="myUL">
+        </ul>
+    </div>
+</body>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+    $(function () {
+        $("#offline").load("offline_status_bar_with_no_action.html");
+    });
+</script>
+<script src="./js/search-renderer.js"></script>
+<script src="./js/offline_renderer.js"></script>
+<script>
+    function filterCity() {
+        searchQuery = document.getElementById('search-input').value;
+        $.getJSON(__dirname + '/resources/citydatas.json', function (cities) {
+            $("#myUL").empty()
+            var cityListHtml = []
+            for (let index = 0; index < cities.length; index++) {
+                const element = cities[index];
+                const postalCode = element["code_postal"].toString()
+                const slicedPostCode = searchQuery.slice(0, searchQuery.length - 1)
+                if (postalCode === searchQuery || (searchQuery.length >= 5 && postalCode.startsWith(slicedPostCode) && postalCode.length >= 5)) {
+                    var cityDescription = postalCode.concat(" ").concat(element["nom_commune_complet"])
+                    cityListHtml.push('<li id="item-value"><a href="#_' + element["nom_commune_complet"] + '">' + cityDescription + '</a></li>')
+                }
+            }
+
+            var uniq = [...new Set(cityListHtml)];
+            for (let index = 0; index < uniq.length; index++) {
+                const li = uniq[index];
+                $("#myUL").append(li)
+            }
+
+            $("a").unbind('click').click(function (e) {
+                e.stopPropagation();
+                const city = $(this).attr("href").replace('#_', '')
+                updateCity(city)
+            });
+        });
+    }
+</script>
+
+</html>
