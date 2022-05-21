@@ -1,7 +1,7 @@
 {
   "name": "mon-adhan-desktop",
   "appId": "fr.app.adhan",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "productName": "Mon Adhan",
   "icon": "icon.png",
   "description": "Application determinant les prochaines prières en fonction de votre lieu de localisation",
@@ -50,7 +50,10 @@
     "lyon",
     "paris",
     "mosquée de paris",
-    "religion"
+    "religion",
+    "salat",
+    "france",
+    "horaires"
   ],
   "devDependencies": {
     "electron": "^16.0.6",

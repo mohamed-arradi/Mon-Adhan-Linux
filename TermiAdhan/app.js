@@ -33,6 +33,8 @@ var settingsView = null
 
 var nextPrayerData = null 
 
+var cronTask = null
+
 var cancelDebounceToken
 var cancelTodayDebounceToken
 
@@ -96,6 +98,19 @@ app.on('window-all-closed', () => {
   }
 })
 
+function updateCronTask() {
+  if(cronTask !== null) {
+    const notificationEnable = storage.getSync(UserNotificationsSettingsKey)?.["notifications_enabled"]
+    console.log(notificationEnable)
+    const notificationEnabled = notificationEnable === true
+  
+  if(notificationEnabled) {
+    cronTask.start()
+  } else {
+    cronTask.stop()
+  }
+  }
+}
 
 function updateContextualMenu() {
 
@@ -166,12 +181,16 @@ app.whenReady().then(() => {
   createMainWindow()
 })
 
-cron.schedule('* * * * *', () => {
-  console.log('running a task every minute');
+cronTask = cron.schedule('* * * * *', () =>  {
+  console.log('running prayer checks every minute');
   const date = moment().tz("Europe/Paris").format("DD-MM-YYYY")
   const channel = "callbackPrayerForCron"
   getPrayerForDate(date, channel, null, cancelTodayDebounceToken)
+}, {
+  scheduled: false
 });
+
+updateCronTask()
 
 ipcMain.on('app:update-city', async (event, city) => {
   if (city !== undefined && city !== null) {
@@ -211,7 +230,9 @@ ipcMain.on('app:get-notifications-settings', async (event, args) => {
 
 ipcMain.on('app:set-notifications-prayer-settings', (event, args) => {
   if (args !== undefined && args !== null) {
-    storage.set(UserNotificationsSettingsKey, args, function(error) {})
+    storage.set(UserNotificationsSettingsKey, args, function(error) {
+      updateCronTask()
+    })
   }
 })
 
@@ -452,7 +473,7 @@ function notify(title, message) {
   const settings = storage.getSync(UserNotificationsSettingsKey)
 
   const notificationEnable = storage.getSync(UserNotificationsSettingsKey)?.["notifications_enabled"]
-  const notificationHasToBeSend = isEmpty(settings) ? true : notificationEnable
+  const notificationHasToBeSend = notificationEnable === true
 
   if(notificationHasToBeSend) {
   notifier.notify({
