@@ -88,7 +88,7 @@ function createMainWindow() {
 }
 
 app.setLoginItemSettings({
-  openAtLogin: true,
+  openAtLogin: !isDev(),
   args: ['--hidden']
 });
 
@@ -97,6 +97,10 @@ app.on('window-all-closed', () => {
     app.dock.hide()
   }
 })
+
+function isDev() {
+  return process.argv[2] == '--dev';
+}
 
 function updateCronTask() {
   if(cronTask !== null) {
@@ -114,7 +118,10 @@ function updateCronTask() {
 
 function updateContextualMenu() {
 
-  tray = new Tray(__dirname + '/assets/icon_tray.png') 
+  //icon_tray_macos
+  var iconName = process.platform === "darwin" ? '/assets/icon_tray_macos.png' : '/assets/icon_tray.png'
+
+  tray = new Tray(__dirname + iconName) 
   tray.setToolTip('Mon Adhan')
 
   const defaultMenu = [{
